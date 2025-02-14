@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Timberborn.BatchControl;
 using Timberborn.Buildings;
+using Timberborn.ConstructionSites;
 using Timberborn.CoreUI;
 using Timberborn.EntitySystem;
 using Timberborn.Goods;
@@ -16,6 +17,8 @@ namespace GoodTracing.BatchControl {
     readonly IGoodService _goodService;
     readonly BatchControlRowGroupFactory _batchControlRowGroupFactory;
     readonly GoodTracingBatchControlRowFactory _goodTracingBatchControlRowFactory;
+
+    readonly SortedSet<GoodAmount> _constructionRequiredGoods = new(new GoodAmountComparer());
 
     public InputGoodTracingBatchControlTab(VisualElementLoader visualElementLoader,
                                            BatchControlDistrict batchControlDistrict,
@@ -50,14 +53,19 @@ namespace GoodTracing.BatchControl {
                    .Where(e => e.GetComponentFast<Inventories>()?.HasEnabledInventories ?? false)) {
         var inventories = entity.GetComponentFast<Inventories>();
         var manufactory = entity.GetComponentFast<Manufactory>();
+        var constructionSite = entity.GetComponentFast<ConstructionSite>();
 
         foreach (var good in inventories.EnabledInventories
                      .SelectMany(i => i.InputGoods._set).Distinct()) {
           // if the entity is a manufactory, only show goods being consumed by the current recipe
           var isGoodBeingConsumed =
               manufactory == null || IsGoodBeingConsumed(manufactory, good);
+
+          var isGoodUsedInConstruction = constructionSite == null
+                                         || IsGoodRequiredByConstructionSite(
+                                             constructionSite, good);
           
-          if (isGoodBeingConsumed) {
+          if (isGoodBeingConsumed || isGoodUsedInConstruction) {
             if (groups.TryGetValue(good, out var group)) {
               group.AddRow(_goodTracingBatchControlRowFactory.Create(entity));
             } else {
@@ -89,5 +97,15 @@ namespace GoodTracing.BatchControl {
       return isConsumed;
     }
 
+    bool IsGoodRequiredByConstructionSite(ConstructionSite constructionSite, string goodId) {
+      _constructionRequiredGoods.Clear();
+      // TODO not quite sure this should be like this... As soon as capacity is reserved for a good, it would disappear from the list
+      // even though the good has not yet been put into the building. Maybe I should just display the required goods (regardless if they've
+      // already been put in)?
+      constructionSite.RemainingRequiredGoods(_constructionRequiredGoods);
+      var isRequired = _constructionRequiredGoods.Any(g => g.GoodId == goodId);
+      _constructionRequiredGoods.Clear();
+      return isRequired;
+    }
   }
 }
