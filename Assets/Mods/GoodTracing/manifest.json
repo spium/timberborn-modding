@@ -1,0 +1,7 @@
+﻿{
+  "Name": "Good Tracing",
+  "Version": "0.1.0",
+  "Id": "sp1um.GoodTracing",
+  "MinimumGameVersion": "0.6.5.1",
+  "Description": "Adds a batch control tab that allows you to see where each good is being produced and/or consumed"
+}

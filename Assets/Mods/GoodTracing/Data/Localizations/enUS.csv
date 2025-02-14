@@ -1,0 +1,3 @@
+ID,Text,Comment
+sp1um.GoodTracing.InputBatchControlTabName,Good Consumption,Name of the consumption tab in settlement panel
+sp1um.GoodTracing.InputBatchControlKeyBinding,Open Good Consumption Tracing tab,KeyBinding label
