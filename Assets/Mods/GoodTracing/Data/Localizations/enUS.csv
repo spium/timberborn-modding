@@ -1,7 +1,7 @@
 ID,Text,Comment
-sp1um.GoodTracing.InputBatchControlTabName,Good Consumption,Name of the consumption tab in settlement panel
-sp1um.GoodTracing.InputBatchControlKeyBinding,Open Good Consumption Tracing tab,KeyBinding label
-sp1um.GoodTracing.OutputBatchControlTabName,Good Production,Name of the production tab in settlement panel
-sp1um.GoodTracing.OutputBatchControlKeyBinding,Open Good Production Tracing tab,KeyBinding label
+sp1um.GoodTracing.InputBatchControlTabName,Good consumption,Name of the consumption tab in settlement panel
+sp1um.GoodTracing.InputBatchControlKeyBinding,Open good consumption tab,KeyBinding label
+sp1um.GoodTracing.OutputBatchControlTabName,Good production,Name of the production tab in settlement panel
+sp1um.GoodTracing.OutputBatchControlKeyBinding,Open good production tab,KeyBinding label
 sp1um.GoodTracing.BatchControlTabShowPaused,Show paused buildings,Label of the toggle in the batch control tabs that controls whether to show paused building
 sp1um.GoodTracing.BatchControlTabShowPausedKeyBinding,Toggle show paused buildings in good tracing tabs,Key binding label
