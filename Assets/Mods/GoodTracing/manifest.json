@@ -3,5 +3,5 @@
   "Version": "0.1.0",
   "Id": "sp1um.GoodTracing",
   "MinimumGameVersion": "0.6.5.1",
-  "Description": "Adds a batch control tab that allows you to see where each good is being produced and/or consumed"
+  "Description": "Adds two new tabs to the settlement panel: good consumption and good production. These tabs group buildings by good consumed/produced, making it easier to trace where goods are going to and coming from."
 }
