@@ -5,6 +5,7 @@ using Timberborn.CoreUI;
 using Timberborn.DistributionSystem;
 using Timberborn.EntitySystem;
 using Timberborn.Goods;
+using Timberborn.InputSystemUI;
 using Timberborn.InventorySystem;
 using Timberborn.Workshops;
 using Timberborn.Yielding;
@@ -20,9 +21,10 @@ namespace GoodTracing.BatchControl {
                                             IGoodService goodService,
                                             BatchControlRowGroupFactory batchControlRowGroupFactory,
                                             GoodTracingBatchControlRowFactory
-                                                goodTracingBatchControlRowFactory) :
+                                                goodTracingBatchControlRowFactory,
+                                            BindableToggleFactory bindableToggleFactory) :
         base(visualElementLoader, batchControlDistrict, goodService, batchControlRowGroupFactory,
-             goodTracingBatchControlRowFactory) {
+             goodTracingBatchControlRowFactory, bindableToggleFactory) {
     }
 
     public override string TabNameLocKey => "sp1um.GoodTracing.OutputBatchControlTabName";
