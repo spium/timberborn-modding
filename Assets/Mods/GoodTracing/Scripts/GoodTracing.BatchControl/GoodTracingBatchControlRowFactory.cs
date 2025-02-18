@@ -1,30 +1,28 @@
+using System;
 using Timberborn.Attractions;
-using Timberborn.AttractionsBatchControl;
 using Timberborn.BatchControl;
 using Timberborn.BuildingsUI;
 using Timberborn.CoreUI;
 using Timberborn.DwellingSystem;
 using Timberborn.EntitySystem;
-using Timberborn.HousingBatchControl;
 using Timberborn.Reproduction;
-using Timberborn.WorkplacesBatchControl;
 using Timberborn.WorkSystem;
 
 namespace GoodTracing.BatchControl {
   public class GoodTracingBatchControlRowFactory {
 
     readonly VisualElementLoader _visualElementLoader;
-    readonly WorkplacesBatchControlRowFactory _workplacesBatchControlRowFactory;
-    readonly AttractionsBatchControlRowFactory _attractionsBatchControlRowFactory;
-    readonly HousingBatchControlRowFactory _housingBatchControlRowFactory;
+    readonly GoodTracingWorkplacesBatchControlRowFactory _workplacesBatchControlRowFactory;
+    readonly GoodTracingAttractionsBatchControlRowFactory _attractionsBatchControlRowFactory;
+    readonly GoodTracingHousingBatchControlRowFactory _housingBatchControlRowFactory;
     readonly BuildingBatchControlRowItemFactory _buildingBatchControlRowItemFactory;
 
     public GoodTracingBatchControlRowFactory(VisualElementLoader visualElementLoader,
-                                             WorkplacesBatchControlRowFactory
+                                             GoodTracingWorkplacesBatchControlRowFactory
                                                  workplacesBatchControlRowFactory,
-                                             AttractionsBatchControlRowFactory
+                                             GoodTracingAttractionsBatchControlRowFactory
                                                  attractionsBatchControlRowFactory,
-                                             HousingBatchControlRowFactory
+                                             GoodTracingHousingBatchControlRowFactory
                                                  housingBatchControlRowFactory,
                                              BuildingBatchControlRowItemFactory
                                                  buildingBatchControlRowItemFactory) {
@@ -35,23 +33,24 @@ namespace GoodTracing.BatchControl {
       _buildingBatchControlRowItemFactory = buildingBatchControlRowItemFactory;
     }
 
-    public BatchControlRow Create(EntityComponent entity) {
+    public BatchControlRow Create(EntityComponent entity, string goodId, Func<EntityComponent, string, bool> visibilityGetter) {
       if (entity.GetComponentFast<Workplace>()) {
-        return _workplacesBatchControlRowFactory.Create(entity);
+        return _workplacesBatchControlRowFactory.Create(entity, () => visibilityGetter(entity, goodId));
       }
       
       if (entity.GetComponentFast<Attraction>()) {
-        return _attractionsBatchControlRowFactory.Create(entity);
+        return _attractionsBatchControlRowFactory.Create(entity, () => visibilityGetter(entity, goodId));
       }
 
       if (entity.GetComponentFast<Dwelling>()
           || entity.GetComponentFast<BreedingPod>()) {
-        return _housingBatchControlRowFactory.Create(entity);
+        return _housingBatchControlRowFactory.Create(entity, () => visibilityGetter(entity, goodId));
       }
 
       // TODO maybe improve?
       return new(_visualElementLoader.LoadVisualElement("Game/BatchControl/BatchControlRow"),
-                 entity, _buildingBatchControlRowItemFactory.Create(entity));
+                 entity, () => visibilityGetter(entity, goodId),
+                 _buildingBatchControlRowItemFactory.Create(entity));
     }
   }
 }

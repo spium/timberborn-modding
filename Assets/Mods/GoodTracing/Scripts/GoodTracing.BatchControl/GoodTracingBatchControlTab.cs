@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Timberborn.BatchControl;
@@ -49,8 +50,7 @@ namespace GoodTracing.BatchControl {
       _showPausedToggle = _bindableToggleFactory.Create(toggle, "GoodTracingTabShowPaused",
                                                         value => { 
                                                           _showPaused = value;
-                                                          // TODO is there a better way than to refresh the whole UI?
-                                                          IsDirty = true;
+                                                          UpdateRowsVisibility();
                                                         },
                                                         () => _showPaused);
       _showPausedToggle.Disable();
@@ -63,11 +63,21 @@ namespace GoodTracing.BatchControl {
     public override void Show() {
       _showPausedToggle.Bind();
       _showPausedToggle.Enable();
+      foreach (var pausable in _rowGroups.SelectMany(g => g._rows)
+                   .Where(r => r.Entity && r.Entity.GetComponentFast<PausableBuilding>())
+                   .Select(r => r.Entity.GetComponentFast<PausableBuilding>())) {
+        pausable.PausedChanged += OnPausedStateChanged;
+      }
     }
 
     public override void Hide() {
       _showPausedToggle.Unbind();
       _showPausedToggle.Disable();
+      foreach (var pausable in _rowGroups.SelectMany(g => g._rows)
+                   .Where(r => r.Entity && r.Entity.GetComponentFast<PausableBuilding>())
+                   .Select(r => r.Entity.GetComponentFast<PausableBuilding>())) {
+        pausable.PausedChanged -= OnPausedStateChanged;
+      }
     }
 
     public override IEnumerable<BatchControlRowGroup> GetRowGroups(
@@ -85,17 +95,27 @@ namespace GoodTracing.BatchControl {
                    .Where(e => e.GetComponentFast<Building>())
                    .Where(e => !e.GetComponentFast<Stockpile>())
                    .Where(e => e.GetComponentFast<Inventories>()?.HasEnabledInventories ?? false)) {
-
-        var pausable = entity.GetComponentFast<PausableBuilding>();
-        if (!_showPaused && pausable != null && pausable.Paused) {
-          continue;
-        }
         
         var inventories = entity.GetComponentFast<Inventories>();
         AddRows(entity, inventories.EnabledInventories.SelectMany(GetGoods).Distinct(), groups, _goodTracingBatchControlRowFactory);
       }
 
       return groups.Values;
+    }
+
+    void OnPausedStateChanged(object sender, EventArgs args) {
+      UpdateRowsVisibility();
+    }
+
+    protected virtual bool IsRowVisible(EntityComponent entity, string goodId) {
+      if (_showPaused) {
+        return true;
+      }
+      var pausable = entity.GetComponentFast<PausableBuilding>();
+      if (!pausable) {
+        return true;
+      }
+      return !pausable.Paused;
     }
 
     protected virtual bool ShouldDisplayEntity(EntityComponent entity) {

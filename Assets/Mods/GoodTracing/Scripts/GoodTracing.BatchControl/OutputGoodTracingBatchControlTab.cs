@@ -55,7 +55,7 @@ namespace GoodTracing.BatchControl {
 
         if (isGoodBeingProduced && isGoodObtainable) {
           if (rowGroups.TryGetValue(good, out var group)) {
-            group.AddRow(rowFactory.Create(entity));
+            group.AddRow(rowFactory.Create(entity, good, IsRowVisible));
           } else {
             Debug.LogWarningFormat("[GoodTracing] Unknown good: {0}", good);
           }

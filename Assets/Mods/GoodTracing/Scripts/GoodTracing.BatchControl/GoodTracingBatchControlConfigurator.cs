@@ -7,6 +7,9 @@ namespace GoodTracing.BatchControl {
 
     public void Configure(IContainerDefinition containerDefinition) {
       containerDefinition.Bind<GoodTracingBatchControlRowFactory>().AsSingleton();
+      containerDefinition.Bind<GoodTracingWorkplacesBatchControlRowFactory>().AsSingleton();
+      containerDefinition.Bind<GoodTracingAttractionsBatchControlRowFactory>().AsSingleton();
+      containerDefinition.Bind<GoodTracingHousingBatchControlRowFactory>().AsSingleton();
       containerDefinition.Bind<InputGoodTracingBatchControlTab>().AsSingleton();
       containerDefinition.Bind<OutputGoodTracingBatchControlTab>().AsSingleton();
       containerDefinition.MultiBind<BatchControlModule>()

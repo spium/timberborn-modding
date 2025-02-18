@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Timberborn.BatchControl;
+using Timberborn.BuildingsBlocking;
 using Timberborn.ConstructionSites;
 using Timberborn.CoreUI;
 using Timberborn.EntitySystem;
@@ -53,7 +54,7 @@ namespace GoodTracing.BatchControl {
           
         if (isGoodBeingConsumed || isGoodUsedInConstruction) {
           if (rowGroups.TryGetValue(good, out var group)) {
-            group.AddRow(rowFactory.Create(entity));
+            group.AddRow(rowFactory.Create(entity, good, IsRowVisible));
           } else {
             Debug.LogWarningFormat("[GoodTracing] Unknown good: {0}", good);
           }
