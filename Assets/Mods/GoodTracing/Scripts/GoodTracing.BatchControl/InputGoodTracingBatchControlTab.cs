@@ -29,7 +29,7 @@ namespace GoodTracing.BatchControl {
     }
 
     public override string TabNameLocKey => "sp1um.GoodTracing.InputBatchControlTabName";
-    public override string TabImage => "Workplaces"; //TODO use correct image
+    public override string TabImage => "InputBatchControlTab";
     public override string BindingKey => "InputGoodTracingTab";
 
     protected override IEnumerable<string> GetGoods(Inventory inventory) {

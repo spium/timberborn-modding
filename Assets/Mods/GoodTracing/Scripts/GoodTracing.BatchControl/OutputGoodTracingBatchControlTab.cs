@@ -28,7 +28,7 @@ namespace GoodTracing.BatchControl {
     }
 
     public override string TabNameLocKey => "sp1um.GoodTracing.OutputBatchControlTabName";
-    public override string TabImage => "Workplaces"; //TODO use correct image
+    public override string TabImage => "OutputBatchControlTab";
     public override string BindingKey => "OutputGoodTracingTab";
 
     protected override bool ShouldDisplayEntity(EntityComponent entity) {
