@@ -11,6 +11,7 @@ using Timberborn.InputSystemUI;
 using Timberborn.InventorySystem;
 using Timberborn.SingletonSystem;
 using Timberborn.Stockpiles;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace GoodTracing.BatchControl {
@@ -63,20 +64,30 @@ namespace GoodTracing.BatchControl {
     public override void Show() {
       _showPausedToggle.Bind();
       _showPausedToggle.Enable();
-      foreach (var pausable in _rowGroups.SelectMany(g => g._rows)
-                   .Where(r => r.Entity && r.Entity.GetComponentFast<PausableBuilding>())
-                   .Select(r => r.Entity.GetComponentFast<PausableBuilding>())) {
-        pausable.PausedChanged += OnPausedStateChanged;
+      foreach (var entity in _rowGroups.SelectMany(g => g._rows)
+                   .Where(r => r.Entity)
+                   .Select(r => r.Entity)
+                   .Distinct()) {
+        var pausable = entity.GetComponentFast<PausableBuilding>();
+        if (pausable) {
+          pausable.PausedChanged += OnPausedStateChanged;
+        }
+        RegisterListenersToRefreshRowVisibility(entity);
       }
     }
 
     public override void Hide() {
       _showPausedToggle.Unbind();
       _showPausedToggle.Disable();
-      foreach (var pausable in _rowGroups.SelectMany(g => g._rows)
-                   .Where(r => r.Entity && r.Entity.GetComponentFast<PausableBuilding>())
-                   .Select(r => r.Entity.GetComponentFast<PausableBuilding>())) {
-        pausable.PausedChanged -= OnPausedStateChanged;
+      foreach (var entity in _rowGroups.SelectMany(g => g._rows)
+                   .Where(r => r.Entity)
+                   .Select(r => r.Entity)
+                   .Distinct()) {
+        var pausable = entity.GetComponentFast<PausableBuilding>();
+        if (pausable) {
+          pausable.PausedChanged -= OnPausedStateChanged;
+        }
+        UnregisterListenersToRefreshRowVisibility(entity);
       }
     }
 
@@ -97,17 +108,27 @@ namespace GoodTracing.BatchControl {
                    .Where(e => e.GetComponentFast<Inventories>()?.HasEnabledInventories ?? false)) {
         
         var inventories = entity.GetComponentFast<Inventories>();
-        AddRows(entity, inventories.EnabledInventories.SelectMany(GetGoods).Distinct(), groups, _goodTracingBatchControlRowFactory);
+        foreach (var good in inventories.EnabledInventories.SelectMany(GetGoods).Distinct()) {
+          if (groups.TryGetValue(good, out var group)) {
+            group.AddRow(_goodTracingBatchControlRowFactory.Create(entity, good, IsRowVisibleInternal));
+          } else {
+            Debug.LogWarningFormat("[GoodTracing] Unknown good: {0}", good);
+          }
+        }
       }
 
       return groups.Values;
     }
-
+    
     void OnPausedStateChanged(object sender, EventArgs args) {
       UpdateRowsVisibility();
     }
 
-    protected virtual bool IsRowVisible(EntityComponent entity, string goodId) {
+    bool IsRowVisibleInternal(EntityComponent entity, string goodId) {
+      return IsPausedEntityRowVisible(entity) && IsRowVisible(entity, goodId);
+    }
+
+    bool IsPausedEntityRowVisible(EntityComponent entity) {
       if (_showPaused) {
         return true;
       }
@@ -118,14 +139,17 @@ namespace GoodTracing.BatchControl {
       return !pausable.Paused;
     }
 
+    protected abstract bool IsRowVisible(EntityComponent entity, string goodId);
+
     protected virtual bool ShouldDisplayEntity(EntityComponent entity) {
       return true;
     }
     
     protected abstract IEnumerable<string> GetGoods(Inventory inventory);
 
-    protected abstract void AddRows(EntityComponent entity, IEnumerable<string> goods,
-                                    IDictionary<string, BatchControlRowGroup> rowGroups, GoodTracingBatchControlRowFactory rowFactory);
+    protected abstract void RegisterListenersToRefreshRowVisibility(EntityComponent entity);
+
+    protected abstract void UnregisterListenersToRefreshRowVisibility(EntityComponent entity);
 
   }
 }

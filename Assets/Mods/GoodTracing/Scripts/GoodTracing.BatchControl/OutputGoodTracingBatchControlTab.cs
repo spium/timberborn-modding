@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Timberborn.BatchControl;
@@ -39,28 +40,32 @@ namespace GoodTracing.BatchControl {
     protected override IEnumerable<string> GetGoods(Inventory inventory) {
       return inventory.OutputGoods._set;
     }
-
-    protected override void AddRows(EntityComponent entity, IEnumerable<string> goods,
-                                    IDictionary<string, BatchControlRowGroup> rowGroups,
-                                    GoodTracingBatchControlRowFactory rowFactory) {
+    
+    protected override bool IsRowVisible(EntityComponent entity, string goodId) {
       var manufactory = entity.GetComponentFast<Manufactory>();
+      var isGoodBeingProduced = manufactory == null || IsGoodBeingProduced(manufactory, goodId);
+      
       var inRangeYielders = entity.GetComponentFast<InRangeYielders>();
+      var isGoodObtainable = inRangeYielders == null || IsGoodObtainable(inRangeYielders, goodId);
+      return isGoodBeingProduced && isGoodObtainable;
+    }
 
-      foreach (var good in goods) {
-
-        // if the entity is a manufactory, only show goods being produced by the current recipe
-        var isGoodBeingProduced = manufactory == null || IsGoodBeingProduced(manufactory, good);
-        // if the entity is a yield removing building, only show goods that are actually allowed and in range
-        var isGoodObtainable = inRangeYielders == null || IsGoodObtainable(inRangeYielders, good);
-
-        if (isGoodBeingProduced && isGoodObtainable) {
-          if (rowGroups.TryGetValue(good, out var group)) {
-            group.AddRow(rowFactory.Create(entity, good, IsRowVisible));
-          } else {
-            Debug.LogWarningFormat("[GoodTracing] Unknown good: {0}", good);
-          }
-        }
+    protected override void RegisterListenersToRefreshRowVisibility(EntityComponent entity) {
+      var manufactory = entity.GetComponentFast<Manufactory>();
+      if (manufactory) {
+        manufactory.ProductionRecipeChanged += OnManufactoryProductionRecipeChanged;
       }
+    }
+    
+    protected override void UnregisterListenersToRefreshRowVisibility(EntityComponent entity) {
+      var manufactory = entity.GetComponentFast<Manufactory>();
+      if (manufactory) {
+        manufactory.ProductionRecipeChanged -= OnManufactoryProductionRecipeChanged;
+      }
+    }
+    
+    void OnManufactoryProductionRecipeChanged(object sender, EventArgs e) {
+      UpdateRowsVisibility();
     }
 
     static bool IsGoodBeingProduced(Manufactory manufactory, string goodId) {

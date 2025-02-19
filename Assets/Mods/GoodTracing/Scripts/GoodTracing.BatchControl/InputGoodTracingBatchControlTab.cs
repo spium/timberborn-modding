@@ -1,7 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Timberborn.BatchControl;
-using Timberborn.BuildingsBlocking;
 using Timberborn.ConstructionSites;
 using Timberborn.CoreUI;
 using Timberborn.EntitySystem;
@@ -9,7 +9,6 @@ using Timberborn.Goods;
 using Timberborn.InputSystemUI;
 using Timberborn.InventorySystem;
 using Timberborn.Workshops;
-using UnityEngine;
 
 namespace GoodTracing.BatchControl {
   public class InputGoodTracingBatchControlTab : GoodTracingBatchControlTab {
@@ -36,30 +35,47 @@ namespace GoodTracing.BatchControl {
     protected override IEnumerable<string> GetGoods(Inventory inventory) {
       return inventory.InputGoods._set;
     }
-
-    protected override void AddRows(EntityComponent entity, IEnumerable<string> goods, IDictionary<string, BatchControlRowGroup> rowGroups,
-                                    GoodTracingBatchControlRowFactory rowFactory) {
-      
+    
+    protected override bool IsRowVisible(EntityComponent entity, string goodId) {
       var manufactory = entity.GetComponentFast<Manufactory>();
+      var isGoodBeingConsumed = manufactory == null || IsGoodBeingConsumed(manufactory, goodId);
+      
       var constructionSite = entity.GetComponentFast<ConstructionSite>();
+      var isGoodUsedInConstruction = constructionSite != null
+                                     && IsGoodRequiredByConstructionSite(
+                                         constructionSite, goodId);
 
-      foreach (var good in goods) {
-        // if the entity is a manufactory, only show goods being consumed by the current recipe
-        var isGoodBeingConsumed =
-            manufactory == null || IsGoodBeingConsumed(manufactory, good);
+      return isGoodBeingConsumed || isGoodUsedInConstruction;
+    }
 
-        var isGoodUsedInConstruction = constructionSite == null
-                                       || IsGoodRequiredByConstructionSite(
-                                           constructionSite, good);
-          
-        if (isGoodBeingConsumed || isGoodUsedInConstruction) {
-          if (rowGroups.TryGetValue(good, out var group)) {
-            group.AddRow(rowFactory.Create(entity, good, IsRowVisible));
-          } else {
-            Debug.LogWarningFormat("[GoodTracing] Unknown good: {0}", good);
-          }
-        }
+    protected override void RegisterListenersToRefreshRowVisibility(EntityComponent entity) {
+      var manufactory = entity.GetComponentFast<Manufactory>();
+      if (manufactory) {
+        manufactory.ProductionRecipeChanged += OnManufactoryProductionRecipeChanged;
       }
+      var constructionSite = entity.GetComponentFast<ConstructionSite>();
+      if (constructionSite) {
+        constructionSite.Inventory.InventoryCapacityReservationChanged += OnConstructionSiteInventoryCapacityReservationChanged;
+      }
+    }
+    
+    protected override void UnregisterListenersToRefreshRowVisibility(EntityComponent entity) {
+      var manufactory = entity.GetComponentFast<Manufactory>();
+      if (manufactory) {
+        manufactory.ProductionRecipeChanged -= OnManufactoryProductionRecipeChanged;
+      }
+      var constructionSite = entity.GetComponentFast<ConstructionSite>();
+      if (constructionSite) {
+        constructionSite.Inventory.InventoryCapacityReservationChanged -= OnConstructionSiteInventoryCapacityReservationChanged;
+      }
+    }
+
+    void OnManufactoryProductionRecipeChanged(object sender, EventArgs args) {
+      UpdateRowsVisibility();
+    }
+    
+    void OnConstructionSiteInventoryCapacityReservationChanged(object sender, InventoryAmountChangedEventArgs e) {
+      UpdateRowsVisibility();
     }
 
     static bool IsGoodBeingConsumed(Manufactory manufactory, string goodId) {
