@@ -134,7 +134,7 @@ namespace GoodTracing.BatchControl {
           continue;
         }
         _trackedEntities.Add(entity);
-        foreach (var good in inventories.EnabledInventories.SelectMany(GetGoods).Distinct()) {
+        foreach (var good in inventories.AllInventories.SelectMany(GetGoods).Distinct()) {
           if (groups.TryGetValue(good, out var group)) {
             group.AddRow(
                 _goodTracingBatchControlRowFactory.Create(entity, good, IsRowVisibleInternal));

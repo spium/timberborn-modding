@@ -43,6 +43,11 @@ namespace GoodTracing.BatchControl {
     }
     
     protected override bool IsRowVisible(EntityComponent entity, string goodId) {
+      var inventories = entity.GetComponentFast<Inventories>();
+      if (!inventories.EnabledInventories.Any(i => i.Gives(goodId))) {
+        return false;
+      }
+      
       var manufactory = entity.GetComponentFast<Manufactory>();
       var isGoodBeingProduced = manufactory == null || IsGoodBeingProduced(manufactory, goodId);
       

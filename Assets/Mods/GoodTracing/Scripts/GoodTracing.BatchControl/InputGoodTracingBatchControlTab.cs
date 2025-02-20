@@ -36,6 +36,11 @@ namespace GoodTracing.BatchControl {
     }
     
     protected override bool IsRowVisible(EntityComponent entity, string goodId) {
+      var inventories = entity.GetComponentFast<Inventories>();
+      if (!inventories.EnabledInventories.Any(i => i.Takes(goodId))) {
+        return false;
+      }
+      
       var constructionSite = entity.GetComponentFast<ConstructionSite>();
       var isGoodUsedInConstruction = constructionSite != null
                                      && IsGoodRequiredByConstructionSite(
