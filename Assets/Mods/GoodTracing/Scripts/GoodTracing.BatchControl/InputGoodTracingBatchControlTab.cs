@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Timberborn.BatchControl;
+using Timberborn.BlockSystem;
 using Timberborn.ConstructionSites;
 using Timberborn.CoreUI;
 using Timberborn.EntitySystem;
@@ -9,10 +10,12 @@ using Timberborn.Goods;
 using Timberborn.InputSystemUI;
 using Timberborn.InventorySystem;
 using Timberborn.SingletonSystem;
+using Timberborn.Stockpiles;
 using Timberborn.Workshops;
 
 namespace GoodTracing.BatchControl {
   public class InputGoodTracingBatchControlTab : GoodTracingBatchControlTab {
+
     public InputGoodTracingBatchControlTab(VisualElementLoader visualElementLoader,
                                            BatchControlDistrict batchControlDistrict,
                                            IGoodService goodService,
@@ -24,7 +27,6 @@ namespace GoodTracing.BatchControl {
     ) :
         base(visualElementLoader, batchControlDistrict, goodService, batchControlRowGroupFactory,
              goodTracingBatchControlRowFactory, bindableToggleFactory, eventBus) {
-      
     }
 
     public override string TabNameLocKey => "sp1um.GoodTracing.InputBatchControlTabName";
@@ -34,26 +36,41 @@ namespace GoodTracing.BatchControl {
     protected override IEnumerable<string> GetGoods(Inventory inventory) {
       return inventory.InputGoods._set;
     }
-    
+
+    protected override bool ShouldAddToRowGroups(EntityComponent entity) {
+      var blockState = entity.GetComponentFast<BlockObjectState>();
+      if (!blockState) {
+        return false;
+      }
+      
+      if (!blockState.IsFinished) {
+        // always add buildings under construction, as long as they still require some goods
+        var constructionSite = entity.GetEnabledComponent<ConstructionSite>();
+        if (constructionSite && !constructionSite.Inventory.IsFull) {
+          return true;
+        }
+      }
+
+      // otherwise don't display stockpiles
+      var stockpile = entity.GetComponentFast<Stockpile>();
+      return !stockpile;
+    }
+
     protected override bool IsRowVisible(EntityComponent entity, string goodId) {
       var inventories = entity.GetComponentFast<Inventories>();
       if (!inventories.EnabledInventories.Any(i => i.Takes(goodId))) {
         return false;
       }
-      
-      var constructionSite = entity.GetComponentFast<ConstructionSite>();
-      var isGoodUsedInConstruction = constructionSite != null
-                                     && IsGoodRequiredByConstructionSite(
-                                         constructionSite, goodId);
-      // early exit if construction is still in progress
-      if (isGoodUsedInConstruction) {
-        return true;
+
+      var blockState = entity.GetComponentFast<BlockObjectState>();
+      if (!blockState.IsFinished) {
+        // if it's still under construction, show the row only if good is being used for construction
+        var constructionSite = entity.GetEnabledComponent<ConstructionSite>();
+        return constructionSite != null && IsGoodRequiredByConstructionSite(constructionSite, goodId);
       }
       
-      var manufactory = entity.GetComponentFast<Manufactory>();
-      var isGoodBeingConsumed = manufactory == null || IsGoodBeingConsumed(manufactory, goodId);
-
-      return isGoodBeingConsumed;
+      var manufactory = entity.GetEnabledComponent<Manufactory>();
+      return manufactory == null || IsGoodBeingConsumed(manufactory, goodId);
     }
 
     protected override void RegisterListenersToRefreshRowVisibility(EntityComponent entity) {
@@ -63,7 +80,6 @@ namespace GoodTracing.BatchControl {
       }
       var constructionSite = entity.GetComponentFast<ConstructionSite>();
       if (constructionSite) {
-        constructionSite.OnConstructionSiteProgressed += OnConstructionSiteProgressed;
         constructionSite.Inventory.InventoryStockChanged += OnConstructionSiteInventoryStockChanged;
       }
     }
@@ -75,7 +91,6 @@ namespace GoodTracing.BatchControl {
       }
       var constructionSite = entity.GetComponentFast<ConstructionSite>();
       if (constructionSite) {
-        constructionSite.OnConstructionSiteProgressed -= OnConstructionSiteProgressed;
         constructionSite.Inventory.InventoryStockChanged -= OnConstructionSiteInventoryStockChanged;
       }
     }
@@ -83,17 +98,13 @@ namespace GoodTracing.BatchControl {
     void OnManufactoryProductionRecipeChanged(object sender, EventArgs args) {
       UpdateRowsVisibility();
     }
-    
+
     void OnConstructionSiteInventoryStockChanged(object sender, InventoryAmountChangedEventArgs e) {
+      // refresh when construction inventory for a specific good has been completely filled (the row should disappear as the good is no longer consumed)
       var inventory = (Inventory) sender;
-      if (inventory.AmountInStock(e.GoodAmount.GoodId) >= inventory.LimitedAmount(e.GoodAmount.GoodId)) {
-        UpdateRowsVisibility();
-      }
-    }
-    
-    void OnConstructionSiteProgressed(object sender, EventArgs e) {
-      var constructionSite = (ConstructionSite) sender;
-      if (constructionSite.BuildTimeProgress >= 1f) {
+      var inStock = inventory.AmountInStock(e.GoodAmount.GoodId);
+      var needed = inventory.LimitedAmount(e.GoodAmount.GoodId);
+      if (inStock >= needed) {
         UpdateRowsVisibility();
       }
     }
@@ -118,7 +129,7 @@ namespace GoodTracing.BatchControl {
     }
 
     static bool IsGoodRequiredByConstructionSite(ConstructionSite constructionSite, string goodId) {
-      if (constructionSite.BuildTimeProgress >= 1f) {
+      if (constructionSite.Inventory.IsFull) {
         return false;
       }
       if (!constructionSite.Inventory.Takes(goodId)) {
@@ -129,5 +140,6 @@ namespace GoodTracing.BatchControl {
       var obtained = constructionSite.Inventory.AmountInStock(goodId);
       return obtained < needed;
     }
+
   }
 }

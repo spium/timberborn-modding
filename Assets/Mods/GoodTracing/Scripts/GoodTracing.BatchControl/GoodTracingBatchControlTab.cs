@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Timberborn.BatchControl;
+using Timberborn.BlockSystem;
 using Timberborn.Buildings;
 using Timberborn.BuildingsBlocking;
 using Timberborn.CoreUI;
@@ -10,7 +11,6 @@ using Timberborn.Goods;
 using Timberborn.InputSystemUI;
 using Timberborn.InventorySystem;
 using Timberborn.SingletonSystem;
-using Timberborn.Stockpiles;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -28,7 +28,7 @@ namespace GoodTracing.BatchControl {
     BindableToggle _showPausedToggle;
     bool _showPaused;
     bool _isTabVisible;
-    readonly List<EntityComponent> _trackedEntities = new();
+    readonly HashSet<EntityComponent> _trackedEntities = new();
 
     protected GoodTracingBatchControlTab(VisualElementLoader visualElementLoader,
                                          BatchControlDistrict batchControlDistrict,
@@ -67,6 +67,13 @@ namespace GoodTracing.BatchControl {
     public void
         OnBatchControlBoxHiddenEvent(BatchControlBoxHiddenEvent batchControlBoxHiddenEvent) {
       _trackedEntities.Clear();
+    }
+
+    [OnEvent]
+    public void OnEnteredFinishedStateEvent(EnteredFinishedStateEvent evt) {
+      if (_trackedEntities.Contains(evt.BlockObject.GetComponentFast<EntityComponent>())) {
+        UpdateRowsVisibility();
+      }
     }
 
     public override VisualElement GetHeader() {
@@ -126,9 +133,8 @@ namespace GoodTracing.BatchControl {
                                                    });
 
       foreach (var entity in entities
-                   .Where(ShouldDisplayEntity)
                    .Where(e => e.GetComponentFast<Building>())
-                   .Where(e => !e.GetComponentFast<Stockpile>())) {
+                   .Where(ShouldAddToRowGroups)) {
         var inventories = entity.GetComponentFast<Inventories>();
         if (!inventories || !inventories.HasEnabledInventories) {
           continue;
@@ -155,7 +161,9 @@ namespace GoodTracing.BatchControl {
     }
 
     bool IsRowVisibleInternal(EntityComponent entity, string goodId) {
-      return IsPausedEntityRowVisible(entity) && IsRowVisible(entity, goodId);
+      return ShouldAddToRowGroups(entity)
+             && IsPausedEntityRowVisible(entity)
+             && IsRowVisible(entity, goodId);
     }
 
     bool IsPausedEntityRowVisible(EntityComponent entity) {
@@ -171,7 +179,7 @@ namespace GoodTracing.BatchControl {
 
     protected abstract bool IsRowVisible(EntityComponent entity, string goodId);
 
-    protected virtual bool ShouldDisplayEntity(EntityComponent entity) {
+    protected virtual bool ShouldAddToRowGroups(EntityComponent entity) {
       return true;
     }
 

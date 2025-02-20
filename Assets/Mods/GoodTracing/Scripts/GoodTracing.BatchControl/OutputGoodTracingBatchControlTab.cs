@@ -9,6 +9,7 @@ using Timberborn.Goods;
 using Timberborn.InputSystemUI;
 using Timberborn.InventorySystem;
 using Timberborn.SingletonSystem;
+using Timberborn.Stockpiles;
 using Timberborn.Workshops;
 using Timberborn.Yielding;
 
@@ -33,9 +34,11 @@ namespace GoodTracing.BatchControl {
     public override string TabImage => "OutputBatchControlTab";
     public override string BindingKey => "OutputGoodTracingTab";
 
-    protected override bool ShouldDisplayEntity(EntityComponent entity) {
+    protected override bool ShouldAddToRowGroups(EntityComponent entity) {
+      // never display stockpiles
+      var stockpile = entity.GetComponentFast<Stockpile>();
       // TODO decide how to deal with district crossings
-      return !entity.GetComponentFast<DistrictCrossing>();
+      return !stockpile && !entity.GetComponentFast<DistrictCrossing>();
     }
 
     protected override IEnumerable<string> GetGoods(Inventory inventory) {
@@ -48,10 +51,10 @@ namespace GoodTracing.BatchControl {
         return false;
       }
       
-      var manufactory = entity.GetComponentFast<Manufactory>();
+      var manufactory = entity.GetEnabledComponent<Manufactory>();
       var isGoodBeingProduced = manufactory == null || IsGoodBeingProduced(manufactory, goodId);
       
-      var inRangeYielders = entity.GetComponentFast<InRangeYielders>();
+      var inRangeYielders = entity.GetEnabledComponent<InRangeYielders>();
       var isGoodObtainable = inRangeYielders == null || IsGoodObtainable(inRangeYielders, goodId);
       return isGoodBeingProduced && isGoodObtainable;
     }
