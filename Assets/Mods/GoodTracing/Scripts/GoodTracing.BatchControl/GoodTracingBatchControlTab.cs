@@ -15,16 +15,20 @@ using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace GoodTracing.BatchControl {
-  public abstract class GoodTracingBatchControlTab : BatchControlTab, ILoadableSingleton {
+  public abstract class GoodTracingBatchControlTab : BatchControlTab,
+                                                     ILoadableSingleton {
 
     readonly IGoodService _goodService;
     readonly BatchControlRowGroupFactory _batchControlRowGroupFactory;
     readonly GoodTracingBatchControlRowFactory _goodTracingBatchControlRowFactory;
     readonly BindableToggleFactory _bindableToggleFactory;
+    readonly EventBus _eventBus;
 
     VisualElement _headerVisualElement;
     BindableToggle _showPausedToggle;
     bool _showPaused;
+    bool _isTabVisible;
+    readonly List<EntityComponent> _trackedEntities = new();
 
     protected GoodTracingBatchControlTab(VisualElementLoader visualElementLoader,
                                          BatchControlDistrict batchControlDistrict,
@@ -32,16 +36,17 @@ namespace GoodTracing.BatchControl {
                                          BatchControlRowGroupFactory batchControlRowGroupFactory,
                                          GoodTracingBatchControlRowFactory
                                              goodTracingBatchControlRowFactory,
-                                         BindableToggleFactory bindableToggleFactory
+                                         BindableToggleFactory bindableToggleFactory,
+                                         EventBus eventBus
     ) :
         base(visualElementLoader, batchControlDistrict) {
       _goodService = goodService;
       _batchControlRowGroupFactory = batchControlRowGroupFactory;
       _goodTracingBatchControlRowFactory = goodTracingBatchControlRowFactory;
       _bindableToggleFactory = bindableToggleFactory;
+      _eventBus = eventBus;
     }
-    
-    
+
     public override bool RemoveEmptyRowGroups => true;
 
     public void Load() {
@@ -49,14 +54,21 @@ namespace GoodTracing.BatchControl {
           _visualElementLoader.LoadVisualElement("GoodTracing/GoodTracingBatchControlTabHeader");
       var toggle = _headerVisualElement.Q<Toggle>("ShowPaused");
       _showPausedToggle = _bindableToggleFactory.Create(toggle, "GoodTracingTabShowPaused",
-                                                        value => { 
+                                                        value => {
                                                           _showPaused = value;
                                                           UpdateRowsVisibility();
                                                         },
                                                         () => _showPaused);
       _showPausedToggle.Disable();
+      _eventBus.Register(this);
     }
-    
+
+    [OnEvent]
+    public void
+        OnBatchControlBoxHiddenEvent(BatchControlBoxHiddenEvent batchControlBoxHiddenEvent) {
+      _trackedEntities.Clear();
+    }
+
     public override VisualElement GetHeader() {
       return _headerVisualElement;
     }
@@ -64,10 +76,22 @@ namespace GoodTracing.BatchControl {
     public override void Show() {
       _showPausedToggle.Bind();
       _showPausedToggle.Enable();
-      foreach (var entity in _rowGroups.SelectMany(g => g._rows)
-                   .Where(r => r.Entity)
-                   .Select(r => r.Entity)
-                   .Distinct()) {
+      RegisterAllListeners();
+      _isTabVisible = true;
+    }
+
+    public override void Hide() {
+      _showPausedToggle.Unbind();
+      _showPausedToggle.Disable();
+      UnregisterAllListeners();
+      _isTabVisible = false;
+    }
+
+    void RegisterAllListeners() {
+      foreach (var entity in _trackedEntities) {
+        if (!entity) {
+          continue;
+        }
         var pausable = entity.GetComponentFast<PausableBuilding>();
         if (pausable) {
           pausable.PausedChanged += OnPausedStateChanged;
@@ -76,13 +100,11 @@ namespace GoodTracing.BatchControl {
       }
     }
 
-    public override void Hide() {
-      _showPausedToggle.Unbind();
-      _showPausedToggle.Disable();
-      foreach (var entity in _rowGroups.SelectMany(g => g._rows)
-                   .Where(r => r.Entity)
-                   .Select(r => r.Entity)
-                   .Distinct()) {
+    void UnregisterAllListeners() {
+      foreach (var entity in _trackedEntities) {
+        if (!entity) {
+          continue;
+        }
         var pausable = entity.GetComponentFast<PausableBuilding>();
         if (pausable) {
           pausable.PausedChanged -= OnPausedStateChanged;
@@ -93,6 +115,8 @@ namespace GoodTracing.BatchControl {
 
     public override IEnumerable<BatchControlRowGroup> GetRowGroups(
         IEnumerable<EntityComponent> entities) {
+      UnregisterAllListeners();
+      _trackedEntities.Clear();
       var groups = _goodService.Goods.ToDictionary(goodId => goodId,
                                                    goodId => {
                                                      var good = _goodService.GetGood(goodId);
@@ -100,26 +124,32 @@ namespace GoodTracing.BatchControl {
                                                          .Create(good.PluralDisplayName,
                                                                  good.PluralDisplayName);
                                                    });
-      
+
       foreach (var entity in entities
                    .Where(ShouldDisplayEntity)
                    .Where(e => e.GetComponentFast<Building>())
-                   .Where(e => !e.GetComponentFast<Stockpile>())
-                   .Where(e => e.GetComponentFast<Inventories>()?.HasEnabledInventories ?? false)) {
-        
+                   .Where(e => !e.GetComponentFast<Stockpile>())) {
         var inventories = entity.GetComponentFast<Inventories>();
+        if (!inventories || !inventories.HasEnabledInventories) {
+          continue;
+        }
+        _trackedEntities.Add(entity);
         foreach (var good in inventories.EnabledInventories.SelectMany(GetGoods).Distinct()) {
           if (groups.TryGetValue(good, out var group)) {
-            group.AddRow(_goodTracingBatchControlRowFactory.Create(entity, good, IsRowVisibleInternal));
+            group.AddRow(
+                _goodTracingBatchControlRowFactory.Create(entity, good, IsRowVisibleInternal));
           } else {
             Debug.LogWarningFormat("[GoodTracing] Unknown good: {0}", good);
           }
         }
       }
 
+      if (_isTabVisible) {
+        RegisterAllListeners();
+      }
       return groups.Values;
     }
-    
+
     void OnPausedStateChanged(object sender, EventArgs args) {
       UpdateRowsVisibility();
     }
@@ -144,7 +174,7 @@ namespace GoodTracing.BatchControl {
     protected virtual bool ShouldDisplayEntity(EntityComponent entity) {
       return true;
     }
-    
+
     protected abstract IEnumerable<string> GetGoods(Inventory inventory);
 
     protected abstract void RegisterListenersToRefreshRowVisibility(EntityComponent entity);

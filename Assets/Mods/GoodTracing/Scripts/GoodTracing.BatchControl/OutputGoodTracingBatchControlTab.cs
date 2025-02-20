@@ -8,9 +8,9 @@ using Timberborn.EntitySystem;
 using Timberborn.Goods;
 using Timberborn.InputSystemUI;
 using Timberborn.InventorySystem;
+using Timberborn.SingletonSystem;
 using Timberborn.Workshops;
 using Timberborn.Yielding;
-using UnityEngine;
 
 namespace GoodTracing.BatchControl {
   public class OutputGoodTracingBatchControlTab : GoodTracingBatchControlTab {
@@ -23,9 +23,10 @@ namespace GoodTracing.BatchControl {
                                             BatchControlRowGroupFactory batchControlRowGroupFactory,
                                             GoodTracingBatchControlRowFactory
                                                 goodTracingBatchControlRowFactory,
-                                            BindableToggleFactory bindableToggleFactory) :
+                                            BindableToggleFactory bindableToggleFactory,
+                                            EventBus eventBus) :
         base(visualElementLoader, batchControlDistrict, goodService, batchControlRowGroupFactory,
-             goodTracingBatchControlRowFactory, bindableToggleFactory) {
+             goodTracingBatchControlRowFactory, bindableToggleFactory, eventBus) {
     }
 
     public override string TabNameLocKey => "sp1um.GoodTracing.OutputBatchControlTabName";
