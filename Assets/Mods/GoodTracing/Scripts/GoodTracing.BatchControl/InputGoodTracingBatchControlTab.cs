@@ -13,9 +13,6 @@ using Timberborn.Workshops;
 
 namespace GoodTracing.BatchControl {
   public class InputGoodTracingBatchControlTab : GoodTracingBatchControlTab {
-
-    readonly SortedSet<GoodAmount> _constructionRequiredGoods = new(new GoodAmountComparer());
-
     public InputGoodTracingBatchControlTab(VisualElementLoader visualElementLoader,
                                            BatchControlDistrict batchControlDistrict,
                                            IGoodService goodService,
@@ -57,10 +54,11 @@ namespace GoodTracing.BatchControl {
       }
       var constructionSite = entity.GetComponentFast<ConstructionSite>();
       if (constructionSite) {
-        constructionSite.Inventory.InventoryCapacityReservationChanged += OnConstructionSiteInventoryCapacityReservationChanged;
+        constructionSite.OnConstructionSiteProgressed += OnConstructionSiteProgressed;
+        constructionSite.Inventory.InventoryStockChanged += OnConstructionSiteInventoryStockChanged;
       }
     }
-    
+
     protected override void UnregisterListenersToRefreshRowVisibility(EntityComponent entity) {
       var manufactory = entity.GetComponentFast<Manufactory>();
       if (manufactory) {
@@ -68,7 +66,8 @@ namespace GoodTracing.BatchControl {
       }
       var constructionSite = entity.GetComponentFast<ConstructionSite>();
       if (constructionSite) {
-        constructionSite.Inventory.InventoryCapacityReservationChanged -= OnConstructionSiteInventoryCapacityReservationChanged;
+        constructionSite.OnConstructionSiteProgressed -= OnConstructionSiteProgressed;
+        constructionSite.Inventory.InventoryStockChanged -= OnConstructionSiteInventoryStockChanged;
       }
     }
 
@@ -76,7 +75,11 @@ namespace GoodTracing.BatchControl {
       UpdateRowsVisibility();
     }
     
-    void OnConstructionSiteInventoryCapacityReservationChanged(object sender, InventoryAmountChangedEventArgs e) {
+    void OnConstructionSiteInventoryStockChanged(object sender, InventoryAmountChangedEventArgs e) {
+      UpdateRowsVisibility();
+    }
+    
+    void OnConstructionSiteProgressed(object sender, EventArgs e) {
       UpdateRowsVisibility();
     }
 
@@ -99,15 +102,14 @@ namespace GoodTracing.BatchControl {
       return isConsumed;
     }
 
-    bool IsGoodRequiredByConstructionSite(ConstructionSite constructionSite, string goodId) {
-      _constructionRequiredGoods.Clear();
-      // TODO not quite sure this should be like this... As soon as capacity is reserved for a good, it would disappear from the list
-      // even though the good has not yet been put into the building. Maybe I should just display the required goods (regardless if they've
-      // already been put in)?
-      constructionSite.RemainingRequiredGoods(_constructionRequiredGoods);
-      var isRequired = _constructionRequiredGoods.Any(g => g.GoodId == goodId);
-      _constructionRequiredGoods.Clear();
-      return isRequired;
+    static bool IsGoodRequiredByConstructionSite(ConstructionSite constructionSite, string goodId) {
+      if (!constructionSite.Inventory.Takes(goodId)) {
+        return false;
+      }
+
+      var needed = constructionSite.Inventory.LimitedAmount(goodId);
+      var obtained = constructionSite.Inventory.AmountInStock(goodId);
+      return obtained < needed;
     }
   }
 }
