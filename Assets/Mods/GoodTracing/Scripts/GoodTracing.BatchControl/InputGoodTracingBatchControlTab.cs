@@ -36,15 +36,19 @@ namespace GoodTracing.BatchControl {
     }
     
     protected override bool IsRowVisible(EntityComponent entity, string goodId) {
-      var manufactory = entity.GetComponentFast<Manufactory>();
-      var isGoodBeingConsumed = manufactory == null || IsGoodBeingConsumed(manufactory, goodId);
-      
       var constructionSite = entity.GetComponentFast<ConstructionSite>();
       var isGoodUsedInConstruction = constructionSite != null
                                      && IsGoodRequiredByConstructionSite(
                                          constructionSite, goodId);
+      // early exit if construction is still in progress
+      if (isGoodUsedInConstruction) {
+        return true;
+      }
+      
+      var manufactory = entity.GetComponentFast<Manufactory>();
+      var isGoodBeingConsumed = manufactory == null || IsGoodBeingConsumed(manufactory, goodId);
 
-      return isGoodBeingConsumed || isGoodUsedInConstruction;
+      return isGoodBeingConsumed;
     }
 
     protected override void RegisterListenersToRefreshRowVisibility(EntityComponent entity) {
@@ -76,11 +80,17 @@ namespace GoodTracing.BatchControl {
     }
     
     void OnConstructionSiteInventoryStockChanged(object sender, InventoryAmountChangedEventArgs e) {
-      UpdateRowsVisibility();
+      var inventory = (Inventory) sender;
+      if (inventory.AmountInStock(e.GoodAmount.GoodId) >= inventory.LimitedAmount(e.GoodAmount.GoodId)) {
+        UpdateRowsVisibility();
+      }
     }
     
     void OnConstructionSiteProgressed(object sender, EventArgs e) {
-      UpdateRowsVisibility();
+      var constructionSite = (ConstructionSite) sender;
+      if (constructionSite.BuildTimeProgress >= 1f) {
+        UpdateRowsVisibility();
+      }
     }
 
     static bool IsGoodBeingConsumed(Manufactory manufactory, string goodId) {
@@ -103,6 +113,9 @@ namespace GoodTracing.BatchControl {
     }
 
     static bool IsGoodRequiredByConstructionSite(ConstructionSite constructionSite, string goodId) {
+      if (constructionSite.BuildTimeProgress >= 1f) {
+        return false;
+      }
       if (!constructionSite.Inventory.Takes(goodId)) {
         return false;
       }
