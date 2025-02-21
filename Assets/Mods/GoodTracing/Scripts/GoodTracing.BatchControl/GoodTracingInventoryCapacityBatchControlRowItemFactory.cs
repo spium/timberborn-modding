@@ -1,5 +1,4 @@
 using Timberborn.BatchControl;
-using Timberborn.Common;
 using Timberborn.EntitySystem;
 using Timberborn.GoodsUI;
 using Timberborn.InventorySystem;
@@ -26,19 +25,13 @@ namespace GoodTracing.BatchControl {
       var describedGood = _goodDescriber.GetDescribedGood(goodId);
       var goodElement = _inventoryCapacityBatchControlRowItemFactory.CreateGoodElement();
       InventoryCapacityBatchControlRowItemFactory.InitializeIcon(goodElement, describedGood);
-      goodElement.Q<Label>("CapacityAmount").text = inventory.AmountInStock(goodId).ToString();
-      // do not use LimitedAmount() to initialize capacity limit, because when the row is being created it's possible the good
-      // is being disallowed, which results in LimitedAmount() to return 0.
-      goodElement.Q<Label>("CapacityLimit").text =
-          inventory._allowedGoods.GetAmount(goodId).ToString();
       _inventoryCapacityBatchControlRowItemFactory.InitializeTooltip(goodElement, describedGood);
       inventoryWrapper.Add(goodElement);
 
-      var goodItem =
-          new InventoryCapacityBatchControlGood(goodElement.Q<Label>("CapacityAmount"), inventory,
-                                                goodId);
-
-      return new InventoryCapacityBatchControlRowItem(root, Enumerables.One(goodItem));
+      var capacityAmountLabel = goodElement.Q<Label>("CapacityAmount");
+      var capacityLimitLabel = goodElement.Q<Label>("CapacityLimit");
+      return new GoodTracingInventoryCapacityBatchControlRowItem(
+          root, capacityAmountLabel, capacityLimitLabel, inventory, goodId);
     }
 
   }
