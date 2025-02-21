@@ -5,6 +5,7 @@ using Timberborn.BatchControl;
 using Timberborn.CoreUI;
 using Timberborn.DistributionSystem;
 using Timberborn.EntitySystem;
+using Timberborn.GameDistricts;
 using Timberborn.Goods;
 using Timberborn.InputSystemUI;
 using Timberborn.InventorySystem;
@@ -35,10 +36,12 @@ namespace GoodTracing.BatchControl {
     public override string BindingKey => "OutputGoodTracingTab";
 
     protected override bool ShouldAddToRowGroups(EntityComponent entity) {
-      // never display stockpiles
+      // never display stockpiles or district center
       var stockpile = entity.GetComponentFast<Stockpile>();
+      var districtCenter = entity.GetComponentFast<DistrictCenter>();
       // TODO decide how to deal with district crossings
-      return !stockpile && !entity.GetComponentFast<DistrictCrossing>();
+      var districtCrossing = entity.GetComponentFast<DistrictCrossing>();
+      return !stockpile && !districtCenter && !districtCrossing;
     }
 
     protected override IEnumerable<string> GetGoods(Inventory inventory) {
