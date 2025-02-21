@@ -1,4 +1,5 @@
 using Timberborn.BatchControl;
+using Timberborn.CoreUI;
 using Timberborn.EntitySystem;
 using Timberborn.GoodsUI;
 using Timberborn.InventorySystem;
@@ -30,6 +31,11 @@ namespace GoodTracing.BatchControl {
 
       var capacityAmountLabel = goodElement.Q<Label>("CapacityAmount");
       var capacityLimitLabel = goodElement.Q<Label>("CapacityLimit");
+      var goodWrapper = goodElement.Q<NineSliceVisualElement>("GoodWrapper");
+      // I hate this
+      goodWrapper.style.minWidth = 120;
+      capacityAmountLabel.style.flexGrow = 1;
+      capacityLimitLabel.style.flexGrow = 1;
       return new GoodTracingInventoryCapacityBatchControlRowItem(
           root, capacityAmountLabel, capacityLimitLabel, inventory, goodId);
     }
