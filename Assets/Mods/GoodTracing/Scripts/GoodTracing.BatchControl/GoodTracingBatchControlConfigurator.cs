@@ -10,6 +10,8 @@ namespace GoodTracing.BatchControl {
       containerDefinition.Bind<GoodTracingWorkplacesBatchControlRowFactory>().AsSingleton();
       containerDefinition.Bind<GoodTracingAttractionsBatchControlRowFactory>().AsSingleton();
       containerDefinition.Bind<GoodTracingHousingBatchControlRowFactory>().AsSingleton();
+      containerDefinition.Bind<GoodTracingInventoryCapacityBatchControlRowItemFactory>()
+          .AsSingleton();
       containerDefinition.Bind<InputGoodTracingBatchControlTab>().AsSingleton();
       containerDefinition.Bind<OutputGoodTracingBatchControlTab>().AsSingleton();
       containerDefinition.MultiBind<BatchControlModule>()
@@ -22,7 +24,9 @@ namespace GoodTracing.BatchControl {
       readonly InputGoodTracingBatchControlTab _inputGoodTracingBatchControlTab;
       readonly OutputGoodTracingBatchControlTab _outputGoodTracingBatchControlTab;
 
-      public BatchControlModuleProvider(InputGoodTracingBatchControlTab inputGoodTracingBatchControlTab, OutputGoodTracingBatchControlTab outputGoodTracingBatchControlTab) {
+      public BatchControlModuleProvider(
+          InputGoodTracingBatchControlTab inputGoodTracingBatchControlTab,
+          OutputGoodTracingBatchControlTab outputGoodTracingBatchControlTab) {
         _inputGoodTracingBatchControlTab = inputGoodTracingBatchControlTab;
         _outputGoodTracingBatchControlTab = outputGoodTracingBatchControlTab;
       }
@@ -33,6 +37,8 @@ namespace GoodTracing.BatchControl {
         builder.AddTab(_outputGoodTracingBatchControlTab, 100);
         return builder.Build();
       }
+
     }
+
   }
 }

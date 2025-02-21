@@ -8,6 +8,7 @@ using Timberborn.FieldsUI;
 using Timberborn.ForestryUI;
 using Timberborn.GatheringUI;
 using Timberborn.HaulingUI;
+using Timberborn.InventorySystem;
 using Timberborn.PlantingUI;
 using Timberborn.StatusSystemUI;
 using Timberborn.WorkshopsUI;
@@ -40,6 +41,8 @@ namespace GoodTracing.BatchControl {
     readonly ManufactoryTogglableRecipesBatchControlRowItemFactory
         _manufactoryTogglableRecipesBatchControlRowItemFactory;
     readonly ForesterBatchControlRowItemFactory _foresterBatchControlRowItemFactory;
+    readonly GoodTracingInventoryCapacityBatchControlRowItemFactory
+        _inventoryCapacityBatchControlRowItemFactory;
 
     public GoodTracingWorkplacesBatchControlRowFactory(
         VisualElementLoader visualElementLoader,
@@ -60,7 +63,9 @@ namespace GoodTracing.BatchControl {
         ProductivityBatchControlRowItemFactory productivityBatchControlRowItemFactory,
         ManufactoryTogglableRecipesBatchControlRowItemFactory
             manufactoryTogglableRecipesBatchControlRowItemFactory,
-        ForesterBatchControlRowItemFactory foresterBatchControlRowItemFactory) {
+        ForesterBatchControlRowItemFactory foresterBatchControlRowItemFactory,
+        GoodTracingInventoryCapacityBatchControlRowItemFactory
+            inventoryCapacityBatchControlRowItemFactory) {
       _visualElementLoader = visualElementLoader;
       _buildingBatchControlRowItemFactory = buildingBatchControlRowItemFactory;
       _workplacePriorityBatchControlRowItemFactory = workplacePriorityBatchControlRowItemFactory;
@@ -81,12 +86,14 @@ namespace GoodTracing.BatchControl {
       _manufactoryTogglableRecipesBatchControlRowItemFactory =
           manufactoryTogglableRecipesBatchControlRowItemFactory;
       _foresterBatchControlRowItemFactory = foresterBatchControlRowItemFactory;
+      _inventoryCapacityBatchControlRowItemFactory = inventoryCapacityBatchControlRowItemFactory;
     }
 
-    public BatchControlRow Create(EntityComponent entity,
+    public BatchControlRow Create(EntityComponent entity, Inventory inventory, string goodId,
                                   Func<bool> visibilityGetter) {
       return new(_visualElementLoader.LoadVisualElement("Game/BatchControl/BatchControlRow"),
                  entity, visibilityGetter, _buildingBatchControlRowItemFactory.Create(entity),
+                 _inventoryCapacityBatchControlRowItemFactory.Create(entity, inventory, goodId),
                  _workplacePriorityBatchControlRowItemFactory.Create(entity),
                  _workplaceWorkerTypeBatchControlRowItemFactory.Create(entity),
                  _workplaceBatchControlRowItemFactory.Create(entity),

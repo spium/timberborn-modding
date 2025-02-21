@@ -5,6 +5,7 @@ using Timberborn.BatchControl;
 using Timberborn.BlockSystem;
 using Timberborn.Buildings;
 using Timberborn.BuildingsBlocking;
+using Timberborn.Common;
 using Timberborn.CoreUI;
 using Timberborn.EntitySystem;
 using Timberborn.Goods;
@@ -71,6 +72,9 @@ namespace GoodTracing.BatchControl {
 
     [OnEvent]
     public void OnEnteredFinishedStateEvent(EnteredFinishedStateEvent evt) {
+      if (!_isTabVisible) {
+        return;
+      }
       if (_trackedEntities.Contains(evt.BlockObject.GetComponentFast<EntityComponent>())) {
         UpdateRowsVisibility();
       }
@@ -140,12 +144,25 @@ namespace GoodTracing.BatchControl {
           continue;
         }
         _trackedEntities.Add(entity);
-        foreach (var good in inventories.AllInventories.SelectMany(GetGoods).Distinct()) {
-          if (groups.TryGetValue(good, out var group)) {
-            group.AddRow(
-                _goodTracingBatchControlRowFactory.Create(entity, good, IsRowVisibleInternal));
-          } else {
-            Debug.LogWarningFormat("[GoodTracing] Unknown good: {0}", good);
+        
+        // If the building is finished, I only need to add rows for enabled inventories.
+        // Otherwise I need to add all inventories: I will only display the enabled ones, but if the
+        // building becomes finished while the tab is open, the enabled inventories will change (from the construction
+        // ones to the manufactory or other ones).
+        var blockState = entity.GetComponentFast<BlockObjectState>();
+        var isFinished = blockState == null || blockState.IsFinished;
+        var inventoriesToAdd = isFinished
+            ? inventories.EnabledInventories
+            : inventories.AllInventories;
+        
+        foreach (var inventory in inventoriesToAdd) {
+          foreach (var good in GetGoods(inventory)) {
+            if (groups.TryGetValue(good, out var group)) {
+              group.AddRow(
+                  _goodTracingBatchControlRowFactory.Create(entity, inventory, good, IsRowVisibleInternal));
+            } else {
+              Debug.LogWarningFormat("[GoodTracing] Unknown good: {0}", good);
+            }
           }
         }
       }

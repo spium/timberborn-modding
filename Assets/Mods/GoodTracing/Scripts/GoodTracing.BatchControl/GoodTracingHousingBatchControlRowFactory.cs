@@ -6,6 +6,7 @@ using Timberborn.CoreUI;
 using Timberborn.DwellingSystemUI;
 using Timberborn.EntitySystem;
 using Timberborn.HaulingUI;
+using Timberborn.InventorySystem;
 using Timberborn.InventorySystemBatchControl;
 using Timberborn.ReproductionUI;
 using Timberborn.StatusSystemUI;
@@ -24,7 +25,7 @@ namespace GoodTracing.BatchControl {
     readonly StatusBatchControlRowItemFactory _statusBatchControlRowItemFactory;
     readonly ConstructionSitePriorityBatchControlRowItemFactory
         _constructionSitePriorityBatchControlRowItemFactory;
-    readonly InventoryCapacityBatchControlRowItemFactory
+    readonly GoodTracingInventoryCapacityBatchControlRowItemFactory
         _inventoryCapacityBatchControlRowItemFactory;
 
     public GoodTracingHousingBatchControlRowFactory(
@@ -36,7 +37,8 @@ namespace GoodTracing.BatchControl {
         StatusBatchControlRowItemFactory statusBatchControlRowItemFactory,
         ConstructionSitePriorityBatchControlRowItemFactory
             constructionSitePriorityBatchControlRowItemFactory,
-        InventoryCapacityBatchControlRowItemFactory inventoryCapacityBatchControlRowItemFactory) {
+        GoodTracingInventoryCapacityBatchControlRowItemFactory
+            inventoryCapacityBatchControlRowItemFactory) {
       _visualElementLoader = visualElementLoader;
       _buildingBatchControlRowItemFactory = buildingBatchControlRowItemFactory;
       _dwellingBatchControlRowItemFactory = dwellingBatchControlRowItemFactory;
@@ -48,13 +50,14 @@ namespace GoodTracing.BatchControl {
       _inventoryCapacityBatchControlRowItemFactory = inventoryCapacityBatchControlRowItemFactory;
     }
 
-    public BatchControlRow Create(EntityComponent entity, Func<bool> visibilityGetter) {
+    public BatchControlRow Create(EntityComponent entity, Inventory inventory, string goodId,
+                                  Func<bool> visibilityGetter) {
       return new(_visualElementLoader.LoadVisualElement("Game/BatchControl/BatchControlRow"),
                  entity, visibilityGetter, _buildingBatchControlRowItemFactory.Create(entity),
+                 _inventoryCapacityBatchControlRowItemFactory.Create(entity, inventory, goodId),
                  _dwellingBatchControlRowItemFactory.Create(entity),
                  _haulCandidateBatchControlRowItemFactory.Create(entity),
                  _breedingPodBatchControlRowItemFactory.Create(entity),
-                 _inventoryCapacityBatchControlRowItemFactory.Create(entity),
                  _constructionSitePriorityBatchControlRowItemFactory.Create(entity),
                  _statusBatchControlRowItemFactory.Create(entity));
     }

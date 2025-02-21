@@ -5,6 +5,7 @@ using Timberborn.BuildingsUI;
 using Timberborn.CoreUI;
 using Timberborn.DwellingSystem;
 using Timberborn.EntitySystem;
+using Timberborn.InventorySystem;
 using Timberborn.Reproduction;
 using Timberborn.WorkSystem;
 
@@ -16,6 +17,8 @@ namespace GoodTracing.BatchControl {
     readonly GoodTracingAttractionsBatchControlRowFactory _attractionsBatchControlRowFactory;
     readonly GoodTracingHousingBatchControlRowFactory _housingBatchControlRowFactory;
     readonly BuildingBatchControlRowItemFactory _buildingBatchControlRowItemFactory;
+    readonly GoodTracingInventoryCapacityBatchControlRowItemFactory
+        _inventoryCapacityBatchControlRowItemFactory;
 
     public GoodTracingBatchControlRowFactory(VisualElementLoader visualElementLoader,
                                              GoodTracingWorkplacesBatchControlRowFactory
@@ -25,32 +28,40 @@ namespace GoodTracing.BatchControl {
                                              GoodTracingHousingBatchControlRowFactory
                                                  housingBatchControlRowFactory,
                                              BuildingBatchControlRowItemFactory
-                                                 buildingBatchControlRowItemFactory) {
+                                                 buildingBatchControlRowItemFactory,
+                                             GoodTracingInventoryCapacityBatchControlRowItemFactory
+                                                 inventoryCapacityBatchControlRowItemFactory) {
       _visualElementLoader = visualElementLoader;
       _workplacesBatchControlRowFactory = workplacesBatchControlRowFactory;
       _attractionsBatchControlRowFactory = attractionsBatchControlRowFactory;
       _housingBatchControlRowFactory = housingBatchControlRowFactory;
       _buildingBatchControlRowItemFactory = buildingBatchControlRowItemFactory;
+      _inventoryCapacityBatchControlRowItemFactory = inventoryCapacityBatchControlRowItemFactory;
     }
 
-    public BatchControlRow Create(EntityComponent entity, string goodId, Func<EntityComponent, string, bool> visibilityGetter) {
+    public BatchControlRow Create(EntityComponent entity, Inventory inventory, string goodId,
+                                  Func<EntityComponent, string, bool> visibilityGetter) {
+      Func<bool> isVisible = () => inventory.enabled && visibilityGetter(entity, goodId);
+
       if (entity.GetComponentFast<Workplace>()) {
-        return _workplacesBatchControlRowFactory.Create(entity, () => visibilityGetter(entity, goodId));
+        return _workplacesBatchControlRowFactory.Create(entity, inventory, goodId, isVisible);
       }
-      
+
       if (entity.GetComponentFast<Attraction>()) {
-        return _attractionsBatchControlRowFactory.Create(entity, () => visibilityGetter(entity, goodId));
+        return _attractionsBatchControlRowFactory.Create(entity, inventory, goodId, isVisible);
       }
 
       if (entity.GetComponentFast<Dwelling>()
           || entity.GetComponentFast<BreedingPod>()) {
-        return _housingBatchControlRowFactory.Create(entity, () => visibilityGetter(entity, goodId));
+        return _housingBatchControlRowFactory.Create(entity, inventory, goodId, isVisible);
       }
 
       // TODO maybe improve?
       return new(_visualElementLoader.LoadVisualElement("Game/BatchControl/BatchControlRow"),
-                 entity, () => visibilityGetter(entity, goodId),
-                 _buildingBatchControlRowItemFactory.Create(entity));
+                 entity, isVisible,
+                 _buildingBatchControlRowItemFactory.Create(entity),
+                 _inventoryCapacityBatchControlRowItemFactory.Create(entity, inventory, goodId));
     }
+
   }
 }
