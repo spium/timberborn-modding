@@ -3,5 +3,5 @@
   "Version": "0.1.0",
   "Id": "sp1um.GoodTracing",
   "MinimumGameVersion": "0.6.5.1",
-  "Description": "Adds two new tabs to the settlement panel: good consumption and good production. These tabs group buildings by good consumed/produced, making it easier to trace where goods are going to and coming from."
+  "Description": "If you ever find yourself asking \"Where are all my metal blocks going?\" this mod will help you find out.\n\nThe mod adds two new tabs to the settlement panel: good consumption and good production.\nBuildings are grouped by good consumed/produced, making it easier to trace where goods are going to and coming from.\n\n- Good consumption: shows all the buildings that are consuming a certain good (e.g. from a recipe).\nIf a building is under construction, it will also show up consuming the goods it needs to be constructed.\n- Good production: shows all the buildings producing a certain good (e.g. from a recipe, farmhouses, etc.).\nBuildings such as farmhouses, gatherer flags, etc. show up under the categories for the goods that are actually in range."
 }
