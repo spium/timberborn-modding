@@ -1,0 +1,8 @@
+{
+  "KeyBindingSpec": {
+    "Id": "InputGoodTracingTab",
+    "GroupId": "SettlementPanel",
+    "LocKey": "sp1um.GoodTracing.InputBatchControlKeyBinding",
+    "Order": 90
+  }
+}

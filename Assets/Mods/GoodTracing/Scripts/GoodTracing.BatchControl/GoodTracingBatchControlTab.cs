@@ -14,14 +14,12 @@ using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace GoodTracing.BatchControl {
-  public abstract class GoodTracingBatchControlTab : BatchControlTab,
-                                                     ILoadableSingleton {
+  public abstract class GoodTracingBatchControlTab : BatchControlTab{
 
     readonly IGoodService _goodService;
     readonly BatchControlRowGroupFactory _batchControlRowGroupFactory;
     readonly GoodTracingBatchControlRowFactory _goodTracingBatchControlRowFactory;
-    readonly EventBus _eventBus;
-    
+
     bool _showPaused;
     bool _isTabVisible;
     readonly HashSet<EntityComponent> _trackedEntities = new();
@@ -34,30 +32,29 @@ namespace GoodTracing.BatchControl {
                                              goodTracingBatchControlRowFactory,
                                          EventBus eventBus
     ) :
-        base(visualElementLoader, batchControlDistrict) {
+        base(visualElementLoader, batchControlDistrict, eventBus) {
       _goodService = goodService;
       _batchControlRowGroupFactory = batchControlRowGroupFactory;
       _goodTracingBatchControlRowFactory = goodTracingBatchControlRowFactory;
-      _eventBus = eventBus;
     }
 
     public override bool RemoveEmptyRowGroups => true;
-
-    public void Load() {
-      _eventBus.Register(this);
-    }
-
+    
     [OnEvent]
     public void
         OnBatchControlBoxHiddenEvent(BatchControlBoxHiddenEvent batchControlBoxHiddenEvent) {
       _trackedEntities.Clear();
     }
-
-    [OnEvent]
+    
+    /** Note: this should be [OnEvent] but because the base class already has this event registered and I cannot override it,
+     * if I did put [OnEvent] here it would throw. So I'm using a workaround: I have the GoodTracingBatchControlTabEnteredFinishedStateWorkaround
+     * class registered to the event instead, and it will invoke this function when the event is raised.
+     */
     public void OnEnteredFinishedStateEvent(EnteredFinishedStateEvent evt) {
       if (!_isTabVisible) {
         return;
       }
+      Debug.LogWarning("My finished state listener");
       if (_trackedEntities.Contains(evt.BlockObject.GetComponentFast<EntityComponent>())) {
         UpdateRowsVisibility();
       }
@@ -115,12 +112,12 @@ namespace GoodTracing.BatchControl {
                                                    goodId => {
                                                      var good = _goodService.GetGood(goodId);
                                                      return _batchControlRowGroupFactory
-                                                         .Create(good.PluralDisplayName,
-                                                                 good.PluralDisplayName);
+                                                         .Create(good.PluralDisplayName.Value,
+                                                                 good.PluralDisplayName.Value);
                                                    });
 
       foreach (var entity in entities
-                   .Where(e => e.GetComponentFast<Building>())
+                   .Where(e => e.GetComponentFast<BuildingSpec>())
                    .Where(ShouldAddToRowGroups)) {
         var inventories = entity.GetComponentFast<Inventories>();
         if (!inventories || !inventories.HasEnabledInventories) {

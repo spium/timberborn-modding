@@ -139,12 +139,12 @@ namespace GoodTracing.BatchControl {
 
       var isConsumed = false;
       if (manufactory.CurrentRecipe.ConsumesFuel) {
-        var usesFuel = manufactory.CurrentRecipe.Fuel.Id == goodId;
+        var usesFuel = manufactory.CurrentRecipe.Fuel == goodId;
         isConsumed = isConsumed || usesFuel;
       }
 
       if (manufactory.CurrentRecipe.ConsumesIngredients) {
-        var usesIngredient = manufactory.CurrentRecipe.Ingredients.Any(i => i.GoodId == goodId);
+        var usesIngredient = manufactory.CurrentRecipe.Ingredients.Any(i => i.Id == goodId);
         isConsumed = isConsumed || usesIngredient;
       }
 

@@ -89,7 +89,7 @@ namespace GoodTracing.BatchControl {
       }
 
       return manufactory.CurrentRecipe.ProducesProducts
-             && manufactory.CurrentRecipe.Products.Any(i => i.GoodId == goodId);
+             && manufactory.CurrentRecipe.Products.Any(i => i.Id == goodId);
     }
 
     bool IsGoodObtainable(InRangeYielders inRangeYielders, string goodId) {
