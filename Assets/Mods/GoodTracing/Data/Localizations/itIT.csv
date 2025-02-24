@@ -4,4 +4,3 @@ sp1um.GoodTracing.InputBatchControlKeyBinding,Apri tab consumo merci,KeyBinding 
 sp1um.GoodTracing.OutputBatchControlTabName,Produzione merci,Name of the production tab in settlement panel
 sp1um.GoodTracing.OutputBatchControlKeyBinding,Apri tab produzione merci,KeyBinding label
 sp1um.GoodTracing.BatchControlTabShowPaused,Mostra edifici in pausa,Label of the toggle in the batch control tabs that controls whether to show paused building
-sp1um.GoodTracing.BatchControlTabShowPausedKeyBinding,Mostra/nascondi edifici in pausa nei tab di tracciamento merci,Key binding label

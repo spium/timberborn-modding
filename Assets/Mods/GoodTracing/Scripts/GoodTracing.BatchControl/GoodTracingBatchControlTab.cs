@@ -5,11 +5,9 @@ using Timberborn.BatchControl;
 using Timberborn.BlockSystem;
 using Timberborn.Buildings;
 using Timberborn.BuildingsBlocking;
-using Timberborn.Common;
 using Timberborn.CoreUI;
 using Timberborn.EntitySystem;
 using Timberborn.Goods;
-using Timberborn.InputSystemUI;
 using Timberborn.InventorySystem;
 using Timberborn.SingletonSystem;
 using UnityEngine;
@@ -22,11 +20,8 @@ namespace GoodTracing.BatchControl {
     readonly IGoodService _goodService;
     readonly BatchControlRowGroupFactory _batchControlRowGroupFactory;
     readonly GoodTracingBatchControlRowFactory _goodTracingBatchControlRowFactory;
-    readonly BindableToggleFactory _bindableToggleFactory;
     readonly EventBus _eventBus;
-
-    VisualElement _headerVisualElement;
-    BindableToggle _showPausedToggle;
+    
     bool _showPaused;
     bool _isTabVisible;
     readonly HashSet<EntityComponent> _trackedEntities = new();
@@ -37,30 +32,18 @@ namespace GoodTracing.BatchControl {
                                          BatchControlRowGroupFactory batchControlRowGroupFactory,
                                          GoodTracingBatchControlRowFactory
                                              goodTracingBatchControlRowFactory,
-                                         BindableToggleFactory bindableToggleFactory,
                                          EventBus eventBus
     ) :
         base(visualElementLoader, batchControlDistrict) {
       _goodService = goodService;
       _batchControlRowGroupFactory = batchControlRowGroupFactory;
       _goodTracingBatchControlRowFactory = goodTracingBatchControlRowFactory;
-      _bindableToggleFactory = bindableToggleFactory;
       _eventBus = eventBus;
     }
 
     public override bool RemoveEmptyRowGroups => true;
 
     public void Load() {
-      _headerVisualElement =
-          _visualElementLoader.LoadVisualElement("GoodTracing/GoodTracingBatchControlTabHeader");
-      var toggle = _headerVisualElement.Q<Toggle>("ShowPaused");
-      _showPausedToggle = _bindableToggleFactory.Create(toggle, "GoodTracingTabShowPaused",
-                                                        value => {
-                                                          _showPaused = value;
-                                                          UpdateRowsVisibility();
-                                                        },
-                                                        () => _showPaused);
-      _showPausedToggle.Disable();
       _eventBus.Register(this);
     }
 
@@ -81,19 +64,18 @@ namespace GoodTracing.BatchControl {
     }
 
     public override VisualElement GetHeader() {
-      return _headerVisualElement;
+      var header = _visualElementLoader.LoadVisualElement("GoodTracing/GoodTracingBatchControlTabHeader");
+      var toggle = header.Q<Toggle>("ShowPaused");
+      toggle.RegisterValueChangedCallback(ShowPausedBuildingsToggled);
+      return header;
     }
 
     public override void Show() {
-      _showPausedToggle.Bind();
-      _showPausedToggle.Enable();
       RegisterAllListeners();
       _isTabVisible = true;
     }
 
     public override void Hide() {
-      _showPausedToggle.Unbind();
-      _showPausedToggle.Disable();
       UnregisterAllListeners();
       _isTabVisible = false;
     }
@@ -173,6 +155,11 @@ namespace GoodTracing.BatchControl {
       return groups.Values;
     }
 
+    void ShowPausedBuildingsToggled(ChangeEvent<bool> evt) {
+      _showPaused = evt.newValue;
+      UpdateRowsVisibility();
+    }
+    
     void OnPausedStateChanged(object sender, EventArgs args) {
       UpdateRowsVisibility();
     }
