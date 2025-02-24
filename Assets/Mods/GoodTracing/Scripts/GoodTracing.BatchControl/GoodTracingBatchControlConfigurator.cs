@@ -14,6 +14,8 @@ namespace GoodTracing.BatchControl {
       containerDefinition.Bind<GoodTracingHousingBatchControlRowFactory>().AsSingleton();
       containerDefinition.Bind<GoodTracingInventoryCapacityBatchControlRowItemFactory>()
           .AsSingleton();
+      containerDefinition.Bind<GoodTracingBatchControlTabEnteredFinishedStateWorkaround>()
+          .AsSingleton();
       containerDefinition.Bind<InputGoodTracingBatchControlTab>().AsSingleton();
       containerDefinition.Bind<OutputGoodTracingBatchControlTab>().AsSingleton();
       containerDefinition.MultiBind<BatchControlModule>()
