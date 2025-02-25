@@ -17,6 +17,7 @@ namespace GoodTracing.BatchControl {
   public class OutputGoodTracingBatchControlTab : GoodTracingBatchControlTab {
     
     readonly HashSet<string> _yields = new();
+    readonly ISpecificStockpileDetector _specificStockpileDetector;
 
     public OutputGoodTracingBatchControlTab(VisualElementLoader visualElementLoader,
                                             BatchControlDistrict batchControlDistrict,
@@ -24,9 +25,11 @@ namespace GoodTracing.BatchControl {
                                             BatchControlRowGroupFactory batchControlRowGroupFactory,
                                             GoodTracingBatchControlRowFactory
                                                 goodTracingBatchControlRowFactory,
-                                            EventBus eventBus) :
+                                            EventBus eventBus,
+                                            ISpecificStockpileDetector specificStockpileDetector) :
         base(visualElementLoader, batchControlDistrict, goodService, batchControlRowGroupFactory,
              goodTracingBatchControlRowFactory, eventBus) {
+      _specificStockpileDetector = specificStockpileDetector;
     }
 
     public override string TabNameLocKey => "sp1um.GoodTracing.OutputBatchControlTabName";
@@ -39,7 +42,9 @@ namespace GoodTracing.BatchControl {
       var districtCenter = entity.GetComponentFast<DistrictCenter>();
       // TODO decide how to deal with district crossings
       var districtCrossing = entity.GetComponentFast<DistrictCrossing>();
-      return !stockpile && !districtCenter && !districtCrossing;
+      // nor SpecificStockpiles (from Pantry mod)
+      var hasSpecificStockpile = _specificStockpileDetector.HasSpecificStockpile(entity);
+      return !stockpile && !districtCenter && !districtCrossing && !hasSpecificStockpile;
     }
 
     protected override IEnumerable<string> GetGoods(Inventory inventory) {

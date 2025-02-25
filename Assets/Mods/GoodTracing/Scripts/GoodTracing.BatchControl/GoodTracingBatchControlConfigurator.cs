@@ -1,5 +1,7 @@
 using Bindito.Core;
+using System.Linq;
 using Timberborn.BatchControl;
+using Timberborn.Modding;
 
 namespace GoodTracing.BatchControl {
   [Context("Game")]
@@ -16,6 +18,10 @@ namespace GoodTracing.BatchControl {
       containerDefinition.Bind<OutputGoodTracingBatchControlTab>().AsSingleton();
       containerDefinition.MultiBind<BatchControlModule>()
           .ToProvider<BatchControlModuleProvider>()
+          .AsSingleton();
+      
+      containerDefinition.Bind<ISpecificStockpileDetector>()
+          .ToProvider<SpecificStockpileDetectorProvider>()
           .AsSingleton();
     }
 
@@ -40,5 +46,21 @@ namespace GoodTracing.BatchControl {
 
     }
 
+    class SpecificStockpileDetectorProvider : IProvider<ISpecificStockpileDetector> {
+
+      readonly ModRepository _modRepository;
+
+      public SpecificStockpileDetectorProvider(ModRepository modRepository) {
+        _modRepository = modRepository;
+      }
+
+      bool IsPantryModEnabled =>
+          _modRepository.EnabledMods.Any(m => m.Manifest.Id == "Battery.Pantry");
+
+      public ISpecificStockpileDetector Get() {
+        return IsPantryModEnabled ? new PantryDetector() : new EmptyDetector();
+      }
+
+    }
   }
 }

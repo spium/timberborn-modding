@@ -14,6 +14,7 @@ using Timberborn.Workshops;
 
 namespace GoodTracing.BatchControl {
   public class InputGoodTracingBatchControlTab : GoodTracingBatchControlTab {
+    readonly ISpecificStockpileDetector _specificStockpileDetector;
 
     public InputGoodTracingBatchControlTab(VisualElementLoader visualElementLoader,
                                            BatchControlDistrict batchControlDistrict,
@@ -21,10 +22,12 @@ namespace GoodTracing.BatchControl {
                                            BatchControlRowGroupFactory batchControlRowGroupFactory,
                                            GoodTracingBatchControlRowFactory
                                                goodTracingBatchControlRowFactory,
-                                           EventBus eventBus
+                                           EventBus eventBus,
+                                           ISpecificStockpileDetector specificStockpileDetector
     ) :
         base(visualElementLoader, batchControlDistrict, goodService, batchControlRowGroupFactory,
              goodTracingBatchControlRowFactory, eventBus) {
+      _specificStockpileDetector = specificStockpileDetector;
     }
 
     public override string TabNameLocKey => "sp1um.GoodTracing.InputBatchControlTabName";
@@ -51,7 +54,9 @@ namespace GoodTracing.BatchControl {
 
       // otherwise don't display stockpiles
       var stockpile = entity.GetComponentFast<Stockpile>();
-      return !stockpile;
+      // nor SpecificStockpiles (from Pantry mod)
+      var hasSpecificStockpile = _specificStockpileDetector.HasSpecificStockpile(entity);
+      return !stockpile && !hasSpecificStockpile;
     }
 
     protected override bool IsRowVisible(EntityComponent entity, string goodId) {
