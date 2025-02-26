@@ -1,0 +1,7 @@
+﻿{
+  "Name": "District Auto Import Unpause Fix",
+  "Version": "0.1.0",
+  "Id": "sp1um.DistrictImportUnpauseFix",
+  "MinimumGameVersion": "0.6.5.1",
+  "Description": "Fixes an issue where unpausing a building that requires some good does not automatically turn on import of that good in the district (if the good is set to auto-import)."
+}
