@@ -8,7 +8,7 @@ using Timberborn.GameDistricts;
 using Timberborn.InventorySystem;
 
 namespace DistrictImportUnpauseFix.DistributionSystem {
-  public class DistrictDistributableGoodRefresher : BaseComponent, IFinishedStateListener, IUnfinishedStateListener {
+  public class DistrictDistributableGoodRefresher : BaseComponent, IFinishedStateListener {
     DistrictBuilding _districtBuilding;
     PausableBuilding _pausableBuilding;
     Inventories _inventories;
@@ -23,7 +23,7 @@ namespace DistrictImportUnpauseFix.DistributionSystem {
     }
     
     void OnPausedStateChanged(object sender, EventArgs args) {
-      var district = _districtBuilding.GetDistrictOrConstructionDistrict();
+      var district = _districtBuilding.District;
       if (!district) {
         return;
       }
@@ -34,41 +34,18 @@ namespace DistrictImportUnpauseFix.DistributionSystem {
       }
     }
 
-    void RegisterPausedStateChangedEventHandler() {
-      _pausableBuilding.PausedChanged += OnPausedStateChanged;
-    }
-
-    void UnregisterPausedStateChangedEventHandler() {
-      _pausableBuilding.PausedChanged -= OnPausedStateChanged;
-    }
-
     public void OnEnterFinishedState() {
       if (!enabled) {
         return;
       }
-      RegisterPausedStateChangedEventHandler();
+      _pausableBuilding.PausedChanged += OnPausedStateChanged;
     }
 
     public void OnExitFinishedState() {
       if (!enabled) {
         return;
       }
-      UnregisterPausedStateChangedEventHandler();
+      _pausableBuilding.PausedChanged -= OnPausedStateChanged;
     }
-
-    public void OnEnterUnfinishedState() {
-      if (!enabled) {
-        return;
-      }
-      RegisterPausedStateChangedEventHandler();
-    }
-
-    public void OnExitUnfinishedState() {
-      if (!enabled) {
-        return;
-      }
-      UnregisterPausedStateChangedEventHandler();
-    }
-
   }
 }
