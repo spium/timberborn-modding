@@ -65,9 +65,9 @@ namespace GoodTracing.BatchControl {
 
     public override VisualElement GetHeader() {
       var header = _visualElementLoader.LoadVisualElement("GoodTracing/GoodTracingBatchControlTabHeader");
-      var toggle = header.Q<Toggle>("ShowPaused");
-      toggle.value = _showPaused;
-      toggle.RegisterValueChangedCallback(ShowPausedBuildingsToggled);
+      var showPausedToggle = header.Q<Toggle>("ShowPaused");
+      showPausedToggle.value = _showPaused;
+      showPausedToggle.RegisterValueChangedCallback(ShowPausedBuildingsToggled);
       return header;
     }
 

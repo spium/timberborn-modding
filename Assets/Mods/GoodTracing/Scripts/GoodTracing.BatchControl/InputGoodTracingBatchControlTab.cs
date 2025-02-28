@@ -11,11 +11,14 @@ using Timberborn.InventorySystem;
 using Timberborn.SingletonSystem;
 using Timberborn.Stockpiles;
 using Timberborn.Workshops;
+using UnityEngine.UIElements;
 
 namespace GoodTracing.BatchControl {
   public class InputGoodTracingBatchControlTab : GoodTracingBatchControlTab {
     readonly ISpecificStockpileDetector _specificStockpileDetector;
 
+    bool _showConstruction;
+    
     public InputGoodTracingBatchControlTab(VisualElementLoader visualElementLoader,
                                            BatchControlDistrict batchControlDistrict,
                                            IGoodService goodService,
@@ -33,6 +36,15 @@ namespace GoodTracing.BatchControl {
     public override string TabNameLocKey => "sp1um.GoodTracing.InputBatchControlTabName";
     public override string TabImage => "InputBatchControlTab";
     public override string BindingKey => "InputGoodTracingTab";
+
+    public override VisualElement GetHeader() {
+      var header = base.GetHeader();
+      var showConstructionToggle = header.Q<Toggle>("ShowConstruction");
+      showConstructionToggle.value = _showConstruction;
+      showConstructionToggle.RegisterValueChangedCallback(ShowConstructionSitesToggled);
+      showConstructionToggle.ToggleDisplayStyle(true);
+      return header;
+    }
 
     protected override IEnumerable<string> GetGoods(Inventory inventory) {
       return inventory.InputGoods._set;
@@ -67,6 +79,9 @@ namespace GoodTracing.BatchControl {
 
       var blockState = entity.GetComponentFast<BlockObjectState>();
       if (!blockState.IsFinished) {
+        if (!_showConstruction) {
+          return false;
+        }
         // if it's still under construction, show the row only if good is being used for construction
         var constructionSite = entity.GetEnabledComponent<ConstructionSite>();
         return constructionSite != null && IsGoodRequiredByConstructionSite(constructionSite, goodId);
@@ -110,6 +125,11 @@ namespace GoodTracing.BatchControl {
       if (inStock >= needed) {
         UpdateRowsVisibility();
       }
+    }
+    
+    void ShowConstructionSitesToggled(ChangeEvent<bool> evt) {
+      _showConstruction = evt.newValue;
+      UpdateRowsVisibility();
     }
 
     static bool IsGoodBeingConsumed(Manufactory manufactory, string goodId) {

@@ -35,7 +35,7 @@ namespace GoodTracing.BatchControl {
     public override string TabNameLocKey => "sp1um.GoodTracing.OutputBatchControlTabName";
     public override string TabImage => "OutputBatchControlTab";
     public override string BindingKey => "OutputGoodTracingTab";
-
+    
     protected override bool ShouldAddToRowGroups(EntityComponent entity) {
       // never display stockpiles or district center
       var stockpile = entity.GetComponentFast<Stockpile>();
