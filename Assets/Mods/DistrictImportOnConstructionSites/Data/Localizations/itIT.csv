@@ -1,0 +1,5 @@
+ID,Text,Comment
+Distribution.ImportAuto.Description,"Importa la merce solo se è disponibile uno stoccaggio corrispondente, c'è un'esigenza in un posto di lavoro o in una costruzione.",
+Distribution.ImportForced.Description,"Importa sempre la merce all’interscambio distrettuale anche in assenza di stoccaggio corrispondente, di un'esigenza da un posto di lavoro o da una costruzione.",
+Distribution.ImportGoodTooltip.Importable,"Importazione abilitata dall'esigenza da posti di lavoro, di stoccaggio o da costruzioni.","The text shown on a good's tooltip when it is importable. ""Storage workplace or construction site demand"" should be the same as in Distribution.ImportAuto.Description"
+Distribution.ImportGoodTooltip.NonImportable,"Importazione bloccata dalla mancanza di esigenza da posti di lavoro, di stoccaggio o da costruzioni in questo distretto.","The text shown on a good's tooltip when it is not importable. ""Storage workplace and construction site demand"" should be the same as in Distribution.ImportAuto.Description"
