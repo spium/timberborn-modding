@@ -2,6 +2,6 @@
   "Name": "District Auto Import For Construction Sites",
   "Version": "1.0.0",
   "Id": "sp1um.DistrictImportOnConstructionSites",
-  "MinimumGameVersion": "0.6.5.1",
+  "MinimumGameVersion": "0.7.0.0",
   "Description": "Goods set to Auto Import are imported in all districts that have construction sites that require them."
 }
