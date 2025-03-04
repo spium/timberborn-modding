@@ -1,0 +1,16 @@
+{
+    "name": "ConstructionQueue.WidgetUI",
+    "rootNamespace": "",
+    "references": [
+        "ConstructionQueue.ConstructionSites"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

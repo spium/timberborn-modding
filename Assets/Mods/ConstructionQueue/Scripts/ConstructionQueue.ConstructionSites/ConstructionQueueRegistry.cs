@@ -29,7 +29,10 @@ namespace ConstructionQueue.ConstructionSites {
     public ReadOnlyList<ConstructionJob> JobQueue => _sortedJobs.AsReadOnlyList();
     
     public void JobAdded(ConstructionJob job) {
+      // TODO possibly sorting is not needed here and can be done in the UI logic instead
       _sortedJobs.InsertSorted(job, Comparer, out _);
+      // TODO this does not seem like a good indicator of what buildings are being constructed.
+      // Maybe see if I can detect which construction sites are receiving goods (have reserved inventory)
       job._constructionSite.OnConstructionSiteReserved += OnConstructionSiteReservationChanged;
       job._constructionSite.OnConstructionSiteUnreserved += OnConstructionSiteReservationChanged;
       InvokeJobQueueChanged();
