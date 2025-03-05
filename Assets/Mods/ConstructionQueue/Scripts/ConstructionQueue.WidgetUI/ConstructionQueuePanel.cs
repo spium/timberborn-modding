@@ -1,15 +1,13 @@
 using ConstructionQueue.ConstructionSites;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using Timberborn.AssetSystem;
 using Timberborn.BatchControl;
+using Timberborn.ConstructionSites;
 using Timberborn.CoreUI;
 using Timberborn.EntitySystem;
 using Timberborn.SelectionSystem;
 using Timberborn.SingletonSystem;
 using Timberborn.UILayoutSystem;
-using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace ConstructionQueue.WidgetUI {
@@ -21,10 +19,11 @@ namespace ConstructionQueue.WidgetUI {
     readonly IAssetLoader _assetLoader;
     readonly ConstructionQueueRegistry _registry;
     readonly ConstructionQueueRowFactory _rowFactory;
-    readonly List<BatchControlRow> _rows = new();
+    readonly Dictionary<ConstructionJob, ConstructionQueueBatchControlRow> _rows = new();
 
     VisualElement _root;
     ScrollView _scrollView;
+    bool _dirty;
 
     public ConstructionQueuePanel(UILayout uiLayout, EventBus eventBus,
                                   VisualElementLoader visualElementLoader, IAssetLoader assetLoader,
@@ -48,24 +47,24 @@ namespace ConstructionQueue.WidgetUI {
       _eventBus.Register(this);
     }
 
-    void OnJobQueueChanged(object sender, EventArgs e) {
-      Debug.LogWarning("Job queue changed");
-      _scrollView.Clear();
-      foreach (var row in _rows) {
-        row.ClearItems();
+    void OnJobQueueChanged(object sender, JobQueueChangedEventArgs e) {
+      ConstructionQueueBatchControlRow row;
+      switch (e.Type) {
+        case JobQueueChangeType.JobAdded:
+          row = _rowFactory.Create(e.Job);
+          _rows.Add(e.Job, row);
+          _scrollView.Add(row.Root);
+          break;
+        
+        case JobQueueChangeType.JobRemoved:
+          row = _rows[e.Job];
+          _scrollView.Remove(row.Root);
+          _rows.Remove(e.Job);
+          row.ClearItems();
+          break;
       }
-      
-      //TODO this obviously needs improving, update the event args to be able to tell if an entity was added or removed, or just the order changed
-      
-      _rows.Clear();
-      _rows.AddRange(_registry.JobQueue.Select(_rowFactory.Create));
-      foreach (var row in _rows) {
-        _scrollView.Add(row.Root);
-      }
-      
-      Debug.LogWarningFormat("Added {0} rows", _rows.Count);
-      // TODO use VisualElement.Sort() with visual element user data to be able to sort the visual elements in place
-      //_scrollView.Sort((a, b) => a.userData);
+
+      _dirty = true;
     }
 
     [OnEvent]
@@ -79,7 +78,7 @@ namespace ConstructionQueue.WidgetUI {
         SelectableObjectSelectedEvent selectableObjectSelectedEvent) {
       var entity =
           selectableObjectSelectedEvent.SelectableObject.GetComponentFast<EntityComponent>();
-      foreach (var row in _rows) {
+      foreach (var row in _rows.Values) {
         row.Root.EnableInClassList(BatchControlRowHighlighter.HighlightedClass, row.Entity == entity);
       }
     }
@@ -87,15 +86,30 @@ namespace ConstructionQueue.WidgetUI {
     [OnEvent]
     public void OnSelectableObjectUnselected(
         SelectableObjectUnselectedEvent selectableObjectUnselectedEvent) {
-      foreach (var row in _rows) {
+      foreach (var row in _rows.Values) {
         row.Root.EnableInClassList(BatchControlRowHighlighter.HighlightedClass, false);
       }
     }
     
     public void LateUpdateSingleton() {
-      foreach (var row in _rows) {
+      foreach (var row in _rows.Values) {
         row.UpdateItems();
       }
+
+      if (_dirty) {
+        _dirty = false;
+        foreach (var row in _rows.Values) {
+          row.ComparisonData.RefreshComparisonScore();
+        }
+        _scrollView.Sort(RowComparer);
+      }
+    }
+
+    static int RowComparer(VisualElement a, VisualElement b) {
+      var cmpA = (ConstructionQueueRowComparisonData) a.userData;
+      var cmpB = (ConstructionQueueRowComparisonData) b.userData;
+      var cmp = cmpB.ComparisonScore - cmpA.ComparisonScore;
+      return cmp != 0 ? cmp : cmpA.InstantiationOrder - cmpB.InstantiationOrder;
     }
 
   }

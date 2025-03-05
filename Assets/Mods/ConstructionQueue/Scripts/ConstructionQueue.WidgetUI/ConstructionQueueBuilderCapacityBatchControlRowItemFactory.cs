@@ -2,7 +2,6 @@ using Timberborn.BaseComponentSystem;
 using Timberborn.BatchControl;
 using Timberborn.ConstructionSites;
 using Timberborn.CoreUI;
-using Timberborn.EntitySystem;
 using UnityEngine.UIElements;
 
 namespace ConstructionQueue.WidgetUI {

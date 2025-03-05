@@ -1,77 +1,69 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Timberborn.Common;
+using Timberborn.BuilderPrioritySystem;
 using Timberborn.ConstructionSites;
-using Timberborn.EntitySystem;
-using UnityEngine;
+using Timberborn.InventorySystem;
+using Timberborn.PrioritySystem;
 
 namespace ConstructionQueue.ConstructionSites {
-  class ConstructionJobComparer : IComparer<ConstructionJob> {
-    public int Compare(ConstructionJob a, ConstructionJob b) {
-      return (a, b) switch {
-          (null, null) => 0,
-          (_, null) => 1,
-          (null, _) => -1,
-          _ => b._constructionSite._reservations._builders.Count
-               - a._constructionSite._reservations._builders.Count
-      };
-    }
+  public enum JobQueueChangeType {
+    JobAdded, JobRemoved, JobsReordered
+  }
+  
+  public class JobQueueChangedEventArgs : EventArgs {
+    public JobQueueChangeType Type { get; }
+    public ConstructionJob Job { get; }
 
+    public JobQueueChangedEventArgs(JobQueueChangeType type, ConstructionJob job) {
+      Type = type;
+      Job = job;
+    }
   }
   
   public class ConstructionQueueRegistry {
-    static readonly ConstructionJobComparer Comparer = new();
-    readonly List<ConstructionJob> _sortedJobs = new();
+    public event EventHandler<JobQueueChangedEventArgs> JobQueueChanged;
     
-    public event EventHandler JobQueueChanged;
-
-    public ReadOnlyList<ConstructionJob> JobQueue => _sortedJobs.AsReadOnlyList();
-    
-    public void JobAdded(ConstructionJob job) {
-      // TODO possibly sorting is not needed here and can be done in the UI logic instead
-      _sortedJobs.InsertSorted(job, Comparer, out _);
-      // TODO this does not seem like a good indicator of what buildings are being constructed.
-      // Maybe see if I can detect which construction sites are receiving goods (have reserved inventory)
+    internal void JobAdded(ConstructionJob job) {
+      // subscribe to events that may cause the construction queue to be re-ordered
       job._constructionSite.OnConstructionSiteReserved += OnConstructionSiteReservationChanged;
       job._constructionSite.OnConstructionSiteUnreserved += OnConstructionSiteReservationChanged;
-      InvokeJobQueueChanged();
+      job._constructionSite.Inventory.InventoryChanged += OnInventoryChanged;
+      job._constructionSite._blockableBuilding.BuildingBlocked += OnBuildingBlockedChanged;
+      job._constructionSite._blockableBuilding.BuildingUnblocked += OnBuildingBlockedChanged;
+      job.GetComponentFast<BuilderPrioritizable>().PriorityChanged += OnPriorityChanged;
+      InvokeJobQueueChanged(JobQueueChangeType.JobAdded, job);
     }
 
-    public void JobRemoved(ConstructionJob job) {
-      _sortedJobs.Remove(job);
+    internal void JobRemoved(ConstructionJob job) {
       job._constructionSite.OnConstructionSiteReserved -= OnConstructionSiteReservationChanged;
       job._constructionSite.OnConstructionSiteUnreserved -= OnConstructionSiteReservationChanged;
-      InvokeJobQueueChanged();
+      job._constructionSite.Inventory.InventoryChanged -= OnInventoryChanged;
+      job._constructionSite._blockableBuilding.BuildingBlocked -= OnBuildingBlockedChanged;
+      job._constructionSite._blockableBuilding.BuildingUnblocked -= OnBuildingBlockedChanged;
+      job.GetComponentFast<BuilderPrioritizable>().PriorityChanged -= OnPriorityChanged;
+      InvokeJobQueueChanged(JobQueueChangeType.JobRemoved, job);
     }
-
-    void SortJobs() {
-      _sortedJobs.Sort(Comparer);
-      InvokeJobQueueChanged();
-    }
-
-    void InvokeJobQueueChanged() {
-      PrintList();
+    
+    void InvokeJobQueueChanged(JobQueueChangeType type, ConstructionJob job = null) {
       var jobQueueChanged = JobQueueChanged;
       if (jobQueueChanged != null) {
-        jobQueueChanged.Invoke(this, EventArgs.Empty);
+        jobQueueChanged.Invoke(this, new(type, job));
       }
     }
 
     void OnConstructionSiteReservationChanged(object sender, ConstructionSiteReservationEventArgs e) {
-      SortJobs();
+      InvokeJobQueueChanged(JobQueueChangeType.JobsReordered);
+    }
+    
+    void OnInventoryChanged(object sender, InventoryChangedEventArgs e) {
+      InvokeJobQueueChanged(JobQueueChangeType.JobsReordered);
+    }
+    
+    void OnBuildingBlockedChanged(object sender, EventArgs e) {
+      InvokeJobQueueChanged(JobQueueChangeType.JobsReordered);
     }
 
-    void PrintList() {
-      var sb = new StringBuilder();
-      sb.Append("Jobs Queue: ").AppendLine();
-      foreach (var job in _sortedJobs) {
-        sb.AppendFormat("- {0} - builders: {1}/{2}",
-                        job.GetComponentFast<LabeledEntity>().DisplayName,
-                        job._constructionSite._reservations._builders.Count,
-                        job._constructionSite._reservations._capacity).AppendLine();
-      }
-      Debug.LogWarning(sb.ToString());
+    void OnPriorityChanged(object sender, PriorityChangedEventArgs e) {
+      InvokeJobQueueChanged(JobQueueChangeType.JobsReordered);
     }
   }
 }

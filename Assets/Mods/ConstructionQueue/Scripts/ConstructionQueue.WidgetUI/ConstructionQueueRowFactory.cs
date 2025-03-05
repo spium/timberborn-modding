@@ -1,6 +1,5 @@
-using Timberborn.BaseComponentSystem;
-using Timberborn.BatchControl;
 using Timberborn.BuildingsUI;
+using Timberborn.ConstructionSites;
 using Timberborn.ConstructionSitesUI;
 using Timberborn.CoreUI;
 using Timberborn.EntitySystem;
@@ -31,14 +30,18 @@ namespace ConstructionQueue.WidgetUI {
     }
 
 
-    public BatchControlRow Create(BaseComponent job) {
+    public ConstructionQueueBatchControlRow Create(ConstructionJob job) {
       var root = _visualElementLoader.LoadVisualElement("Game/BatchControl/BatchControlRow");
+      var comparisonData = new ConstructionQueueRowComparisonData(job);
+      root.userData = comparisonData;
       //TODO the status for "can't get all required materials" does not seem to update in real-time, figure out why
       return new(root, job.GetComponentFast<EntityComponent>(),
                  _buildingBatchControlRowItemFactory.Create(job),
                  _builderCapacityBatchControlRowItemFactory.Create(job),
                  _constructionSitePriorityBatchControlRowItemFactory.Create(job),
-                 _statusBatchControlRowItemFactory.Create(job));
+                 _statusBatchControlRowItemFactory.Create(job)) {
+          ComparisonData = comparisonData
+      };
     }
   }
 }
