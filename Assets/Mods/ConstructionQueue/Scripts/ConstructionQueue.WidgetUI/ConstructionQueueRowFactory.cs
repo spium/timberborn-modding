@@ -12,21 +12,17 @@ namespace ConstructionQueue.WidgetUI {
     readonly BuildingBatchControlRowItemFactory _buildingBatchControlRowItemFactory;
     readonly ConstructionSitePriorityBatchControlRowItemFactory _constructionSitePriorityBatchControlRowItemFactory;
     readonly StatusBatchControlRowItemFactory _statusBatchControlRowItemFactory;
-    readonly ConstructionQueueBuilderCapacityBatchControlRowItemFactory
-        _builderCapacityBatchControlRowItemFactory;
 
     public ConstructionQueueRowFactory(VisualElementLoader visualElementLoader,
                                        BuildingBatchControlRowItemFactory
                                            buildingBatchControlRowItemFactory,
                                        ConstructionSitePriorityBatchControlRowItemFactory
                                            constructionSitePriorityBatchControlRowItemFactory,
-                                       StatusBatchControlRowItemFactory statusBatchControlRowItemFactory,
-                                       ConstructionQueueBuilderCapacityBatchControlRowItemFactory constructionQueueBuilderCapacityBatchControlRowItemFactory) {
+                                       StatusBatchControlRowItemFactory statusBatchControlRowItemFactory) {
       _visualElementLoader = visualElementLoader;
       _buildingBatchControlRowItemFactory = buildingBatchControlRowItemFactory;
       _constructionSitePriorityBatchControlRowItemFactory = constructionSitePriorityBatchControlRowItemFactory;
       _statusBatchControlRowItemFactory = statusBatchControlRowItemFactory;
-      _builderCapacityBatchControlRowItemFactory = constructionQueueBuilderCapacityBatchControlRowItemFactory;
     }
 
 
@@ -37,7 +33,6 @@ namespace ConstructionQueue.WidgetUI {
       //TODO the status for "can't get all required materials" does not seem to update in real-time, figure out why
       return new(root, job.GetComponentFast<EntityComponent>(),
                  _buildingBatchControlRowItemFactory.Create(job),
-                 _builderCapacityBatchControlRowItemFactory.Create(job),
                  _constructionSitePriorityBatchControlRowItemFactory.Create(job),
                  _statusBatchControlRowItemFactory.Create(job)) {
           ComparisonData = comparisonData

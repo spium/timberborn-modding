@@ -7,7 +7,6 @@ namespace ConstructionQueue.WidgetUI {
     public void Configure(IContainerDefinition containerDefinition) {
       containerDefinition.Bind<ConstructionQueuePanel>().AsSingleton();
       containerDefinition.Bind<ConstructionQueueRowFactory>().AsSingleton();
-      containerDefinition.Bind<ConstructionQueueBuilderCapacityBatchControlRowItemFactory>().AsSingleton();
     }
 
   }
