@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Timberborn.BuilderPrioritySystem;
 using Timberborn.BuildingsBlocking;
@@ -28,6 +29,7 @@ namespace ConstructionQueue.WidgetUI {
      * - is on (grounded and unblocked)
      * - has reserved builder
      * - has reserved capacity
+     * - material progress
      * - priority
      * - instantiation order
      */
@@ -36,11 +38,14 @@ namespace ConstructionQueue.WidgetUI {
       var isOn = _job._constructionSite.IsOn ? 1 : 0;
       var reservedBuilder = _job._constructionSite._reservations._builders.Count > 0 ? 1 : 0;
       var reservedCapacity = _job._constructionSite.Inventory.ReservedCapacity().Any() ? 1 : 0;
+      var materialProgress = Convert.ToInt32(_job._constructionSite.MaterialProgress * 10);
+      
       var priority = (int)_prioritizable.Priority;
-      ComparisonScore = 10000 * isUnpaused
-                        + 1000 * isOn
-                        + reservedBuilder * 100
-                        + reservedCapacity * 10
+      ComparisonScore = 100000 * isUnpaused
+                        + 10000 * isOn
+                        + reservedBuilder * 1000
+                        + reservedCapacity * 100
+                        + materialProgress * 10
                         + priority;
     }
 
