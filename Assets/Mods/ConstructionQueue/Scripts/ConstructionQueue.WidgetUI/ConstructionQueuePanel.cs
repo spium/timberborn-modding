@@ -23,7 +23,8 @@ namespace ConstructionQueue.WidgetUI {
 
     VisualElement _root;
     ScrollView _scrollView;
-    bool _dirty;
+    bool _dirty, _panelVisible;
+    int _refreshFrames;
 
     public ConstructionQueuePanel(UILayout uiLayout, EventBus eventBus,
                                   VisualElementLoader visualElementLoader, IAssetLoader assetLoader,
@@ -43,6 +44,7 @@ namespace ConstructionQueue.WidgetUI {
           _assetLoader.Load<StyleSheet>("UI/Views/Game/BatchControl/BatchControlStyle");
       _root.styleSheets.Add(stylesheet);
       _scrollView = _root.Q<ScrollView>("ConstructionJobs");
+      ConfigureVisibilityToggling(_root, _root.Q<VisualElement>("ContentWrapper"));
       _registry.JobQueueChanged += OnJobQueueChanged;
       _eventBus.Register(this);
     }
@@ -54,6 +56,7 @@ namespace ConstructionQueue.WidgetUI {
           row = _rowFactory.Create(e.Job);
           _rows.Add(e.Job, row);
           _scrollView.Add(row.Root);
+          _refreshFrames = 0;
           break;
         
         case JobQueueChangeType.JobRemoved:
@@ -61,6 +64,7 @@ namespace ConstructionQueue.WidgetUI {
           _scrollView.Remove(row.Root);
           _rows.Remove(e.Job);
           row.ClearItems();
+          _refreshFrames = 0;
           break;
       }
 
@@ -92,12 +96,22 @@ namespace ConstructionQueue.WidgetUI {
     }
     
     public void LateUpdateSingleton() {
+      if (!_panelVisible) {
+        return;
+      }
+      
       foreach (var row in _rows.Values) {
         row.UpdateItems();
       }
 
       if (_dirty) {
+        if (_refreshFrames > 0) {
+          _refreshFrames--;
+          return;
+        }
+        
         _dirty = false;
+        _refreshFrames = 120;
         foreach (var row in _rows.Values) {
           row.ComparisonData.RefreshComparisonScore();
         }
@@ -110,6 +124,29 @@ namespace ConstructionQueue.WidgetUI {
       var cmpB = (ConstructionQueueRowComparisonData) b.userData;
       var cmp = cmpB.ComparisonScore - cmpA.ComparisonScore;
       return cmp != 0 ? cmp : cmpA.InstantiationOrder - cmpB.InstantiationOrder;
+    }
+    
+    void ConfigureVisibilityToggling(VisualElement root, VisualElement content)
+    {
+      var toggler = root.Q<Button>("ExtensionToggler");
+      var background = root.Q<VisualElement>("Background");
+      _panelVisible = content.IsDisplayed();
+      toggler.RegisterCallback<ClickEvent>(_ => ToggleVisibility(toggler, content, background));
+    }
+    
+    void ToggleVisibility(
+        Button toggler,
+        VisualElement items,
+        VisualElement background)
+    {
+      var shouldHide = items.IsDisplayed();
+      _panelVisible = !shouldHide;
+      toggler.EnableInClassList("extension-clamp--hidden", shouldHide);
+      background.ToggleDisplayStyle(!shouldHide);
+      items.ToggleDisplayStyle(!shouldHide);
+      if (_panelVisible) {
+        _refreshFrames = 0;
+      }
     }
 
   }
