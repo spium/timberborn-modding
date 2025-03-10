@@ -1,6 +1,6 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <engine:VisualElement>
-        <Timberborn.CoreUI.NineSliceVisualElement class="square-large--green batch-control-box top-bar-counter--extendable" style="width: 200px; max-height: 500px;">
+        <Timberborn.CoreUI.NineSliceVisualElement class="square-large--green batch-control-box top-bar-counter--extendable" style="width: 220px; max-height: 500px;">
             <engine:VisualElement name="Background" class="extension-panel-background"/>
             <engine:Button name="ExtensionToggler" class="unity-text-element unity-button extension-clamp" />
             <engine:VisualElement name="ContentWrapper" class="batch-control-box__content">
