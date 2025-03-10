@@ -23,8 +23,9 @@ namespace ConstructionQueue.WidgetUI {
 
     VisualElement _root;
     ScrollView _scrollView;
-    bool _dirty, _panelVisible;
+    bool _orderDirty, _panelVisible, _selectedDirty;
     int _refreshFrames;
+    EntityComponent _selected;
 
     public ConstructionQueuePanel(UILayout uiLayout, EventBus eventBus,
                                   VisualElementLoader visualElementLoader, IAssetLoader assetLoader,
@@ -68,7 +69,7 @@ namespace ConstructionQueue.WidgetUI {
           break;
       }
 
-      _dirty = true;
+      _orderDirty = true;
     }
 
     [OnEvent]
@@ -80,19 +81,24 @@ namespace ConstructionQueue.WidgetUI {
     [OnEvent]
     public void OnSelectableObjectSelected(
         SelectableObjectSelectedEvent selectableObjectSelectedEvent) {
+      if (!selectableObjectSelectedEvent.SelectableObject.TryGetComponentFast(
+              out ConstructionSite site)
+          || !site.enabled) {
+        return;
+      }
+      
       var entity =
           selectableObjectSelectedEvent.SelectableObject.GetComponentFast<EntityComponent>();
-      foreach (var row in _rows.Values) {
-        row.Root.EnableInClassList(BatchControlRowHighlighter.HighlightedClass, row.Entity == entity);
-      }
+      _selected = entity;
+      _selectedDirty = true;
     }
 
     [OnEvent]
     public void OnSelectableObjectUnselected(
         SelectableObjectUnselectedEvent selectableObjectUnselectedEvent) {
-      foreach (var row in _rows.Values) {
-        row.Root.EnableInClassList(BatchControlRowHighlighter.HighlightedClass, false);
-      }
+      var wasSelected = _selected != null;
+      _selected = null;
+      _selectedDirty = wasSelected;
     }
     
     public void LateUpdateSingleton() {
@@ -103,14 +109,16 @@ namespace ConstructionQueue.WidgetUI {
       foreach (var row in _rows.Values) {
         row.UpdateItems();
       }
+      
+      RefreshSelected();
 
-      if (_dirty) {
+      if (_orderDirty) {
         if (_refreshFrames > 0) {
           _refreshFrames--;
           return;
         }
         
-        _dirty = false;
+        _orderDirty = false;
         _refreshFrames = 120;
         foreach (var row in _rows.Values) {
           row.ComparisonData.RefreshComparisonScore();
@@ -149,5 +157,14 @@ namespace ConstructionQueue.WidgetUI {
       }
     }
 
+    void RefreshSelected() {
+      if (!_selectedDirty) {
+        return;
+      }
+      _selectedDirty = false;
+      foreach (var row in _rows.Values) {
+        row.Root.EnableInClassList(BatchControlRowHighlighter.HighlightedClass, ReferenceEquals(row.Entity, _selected));
+      }
+    }
   }
 }
