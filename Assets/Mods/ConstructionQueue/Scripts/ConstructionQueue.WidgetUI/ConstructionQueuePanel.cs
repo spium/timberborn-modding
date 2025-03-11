@@ -1,5 +1,6 @@
 using ConstructionQueue.ConstructionSites;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using Timberborn.AssetSystem;
 using Timberborn.BatchControl;
 using Timberborn.ConstructionSites;
@@ -20,6 +21,7 @@ namespace ConstructionQueue.WidgetUI {
     readonly ConstructionQueueRegistry _registry;
     readonly ConstructionQueueRowFactory _rowFactory;
     readonly Dictionary<ConstructionJob, ConstructionQueueBatchControlRow> _rows = new();
+    readonly HashSet<ConstructionJob> _jobsToAdd = new();
 
     VisualElement _root;
     ScrollView _scrollView;
@@ -51,21 +53,22 @@ namespace ConstructionQueue.WidgetUI {
     }
 
     void OnJobQueueChanged(object sender, JobQueueChangedEventArgs e) {
-      ConstructionQueueBatchControlRow row;
       switch (e.Type) {
         case JobQueueChangeType.JobAdded:
-          row = _rowFactory.Create(e.Job);
-          _rows.Add(e.Job, row);
-          _scrollView.Add(row.Root);
-          _refreshFrames = 0;
+          if (_jobsToAdd.Add(e.Job)) {
+            _refreshFrames = 0;
+          }
           break;
         
         case JobQueueChangeType.JobRemoved:
-          row = _rows[e.Job];
-          _scrollView.Remove(row.Root);
-          _rows.Remove(e.Job);
-          row.ClearItems();
-          _refreshFrames = 0;
+          if (_rows.TryGetValue(e.Job, out var row)) {
+            _scrollView.Remove(row.Root);
+            _rows.Remove(e.Job);
+            row.ClearItems();
+            _refreshFrames = 0;
+          } else {
+            _jobsToAdd.Remove(e.Job);
+          }
           break;
       }
 
@@ -105,7 +108,16 @@ namespace ConstructionQueue.WidgetUI {
       if (!_panelVisible) {
         return;
       }
-      
+
+      if (_jobsToAdd.Count > 0) {
+        foreach (var job in _jobsToAdd) {
+          var row = _rowFactory.Create(job);
+          _rows.Add(job, row);
+          _scrollView.Add(row.Root);
+        }
+        _jobsToAdd.Clear();
+      }
+
       foreach (var row in _rows.Values) {
         row.UpdateItems();
       }
