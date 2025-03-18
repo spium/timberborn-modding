@@ -1,0 +1,6 @@
+{
+  "Id": "ConstructionQueueWidget",
+  "GroupId": "UI",
+  "LocKey": "sp1um.ConstructionQueue.ConstructionQueueWidgetToggleKeyBinding",
+  "Order": 200
+}

@@ -1,0 +1,3 @@
+ID,Text,Comment
+sp1um.ConstructionQueue.ConstructionQueueWidgetToggleKeyBinding,"Mostra/nascondi pannello costruzioni","Description of the keybinding to toggle visibility of the construction queue widget in the main UI"
+sp1um.ConstructionQueue.ConstructionSitesCounter,"Costruzioni: {0}","Header text of the construction sites widget. '{0}' will be replaced with the number of construction sites."

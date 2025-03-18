@@ -1,0 +1,18 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <engine:VisualElement class="top-bar-counter" style="width: 230px;">
+        <engine:VisualElement class="top-bar-counter__wrapper top-bar-counter--extendable" style="max-width: 230px; max-height: 500px;">
+            <Timberborn.CoreUI.NineSliceButton name="ConstructionQueueButton" class="unity-text-element unity-button top-bar-counter__button square-large--green" style="align-items: center; justify-content: center; padding: 2px 5px;">
+                <engine:Label name="ConstructionCount" class="unity-text-element unity-label top-bar-counter__count game-text--bold text--yellow" />
+            </Timberborn.CoreUI.NineSliceButton>
+            <Timberborn.CoreUI.NineSliceVisualElement name="Background" class="extension-panel-background square-large--green" style="padding: 0px; margin-top: 8px;"/>
+            <engine:VisualElement name="ContentWrapper" class="batch-control-box" style="max-width: 230px; align-items: center; justify-content: center; padding: 5px; margin: 0px;">
+                <engine:VisualElement class="batch-control-box__content" style="background-color: unset;">
+                    <engine:VisualElement class="batch-control-tab" style="padding: 1px 6px;">
+                        <engine:ScrollView name="ConstructionJobs" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Auto" class="scroll--green-decorated text--default batch-control-tab__rows"/>
+                    </engine:VisualElement>
+                </engine:VisualElement>
+            </engine:VisualElement>
+            <engine:Button name="ExtensionToggler" class="unity-text-element unity-button extension-clamp" />
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>
