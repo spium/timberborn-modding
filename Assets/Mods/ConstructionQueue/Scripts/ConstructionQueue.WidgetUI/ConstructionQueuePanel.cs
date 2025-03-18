@@ -25,6 +25,7 @@ namespace ConstructionQueue.WidgetUI {
 
     VisualElement _root;
     ScrollView _scrollView;
+    Label _constructionCountLabel;
     bool _orderDirty, _panelVisible, _selectedDirty;
     int _refreshFrames;
     EntityComponent _selected;
@@ -47,6 +48,7 @@ namespace ConstructionQueue.WidgetUI {
           _assetLoader.Load<StyleSheet>("UI/Views/Game/BatchControl/BatchControlStyle");
       _root.styleSheets.Add(stylesheet);
       _scrollView = _root.Q<ScrollView>("ConstructionJobs");
+      _constructionCountLabel = _root.Q<Label>("ConstructionCount");
       ConfigureVisibilityToggling(_root, _root.Q<VisualElement>("ContentWrapper"));
       _registry.JobQueueChanged += OnJobQueueChanged;
       _eventBus.Register(this);
@@ -105,6 +107,10 @@ namespace ConstructionQueue.WidgetUI {
     }
     
     public void LateUpdateSingleton() {
+      // TODO localize
+      _constructionCountLabel.text =
+          string.Format("Construction sites: {0}", _rows.Count + _jobsToAdd.Count);
+      
       if (!_panelVisible) {
         return;
       }
