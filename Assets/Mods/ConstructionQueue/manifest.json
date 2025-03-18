@@ -2,6 +2,6 @@
   "Name": "Construction Queue",
   "Version": "0.1.0",
   "Id": "sp1um.ConstructionQueue",
-  "MinimumGameVersion": "0.6.5.1",
+  "MinimumGameVersion": "0.7.1.0",
   "Description": "Displays a widget in the game HUD showing currently active construction projects."
 }

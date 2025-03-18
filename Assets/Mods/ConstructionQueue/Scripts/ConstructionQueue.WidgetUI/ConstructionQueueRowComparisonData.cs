@@ -40,7 +40,7 @@ namespace ConstructionQueue.WidgetUI {
     public void RefreshComparisonScore() {
       var isUnpaused = _pausable.Paused ? 0 : 1;
       var isOn = _job._constructionSite.IsOn ? 1 : 0;
-      var isReachable = _reachable.IsActiveAndUnreachable() ? 0 : 1;
+      var isReachable = _reachable.IsUnreachable() ? 0 : 1;
       var reservedBuilder = _job._constructionSite._reservations._builders.Count > 0 ? 1 : 0;
       var reservedCapacity = _job._constructionSite.Inventory.ReservedCapacity().Any() ? 1 : 0;
       var materialProgress = Convert.ToInt32(_job._constructionSite.MaterialProgress * 10);
