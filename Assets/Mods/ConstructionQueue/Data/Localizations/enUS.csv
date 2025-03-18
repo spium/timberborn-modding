@@ -1,2 +1,3 @@
 ID,Text,Comment
 sp1um.ConstructionQueue.ConstructionQueueWidgetToggleKeyBinding,"Toggle construction queue widget","Description of the keybinding to toggle visibility of the construction queue widget in the main UI"
+sp1um.ConstructionQueue.ConstructionSitesCounter,"Construction sites: {0}","Header text of the construction sites widget. '{0}' will be replaced with the number of construction sites."

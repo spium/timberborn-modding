@@ -6,6 +6,7 @@ using Timberborn.ConstructionSites;
 using Timberborn.CoreUI;
 using Timberborn.EntitySystem;
 using Timberborn.InputSystem;
+using Timberborn.Localization;
 using Timberborn.SelectionSystem;
 using Timberborn.SingletonSystem;
 using Timberborn.UILayoutSystem;
@@ -21,6 +22,7 @@ namespace ConstructionQueue.WidgetUI {
     readonly ConstructionQueueRegistry _registry;
     readonly ConstructionQueueRowFactory _rowFactory;
     readonly InputService _inputService;
+    readonly ILoc _loc;
     
     readonly Dictionary<ConstructionJob, ConstructionQueueBatchControlRow> _rows = new();
     readonly HashSet<ConstructionJob> _jobsToAdd = new();
@@ -38,7 +40,8 @@ namespace ConstructionQueue.WidgetUI {
                                   VisualElementLoader visualElementLoader, IAssetLoader assetLoader,
                                   ConstructionQueueRegistry registry,
                                   ConstructionQueueRowFactory rowFactory,
-                                  InputService inputService) {
+                                  InputService inputService,
+                                  ILoc loc) {
       _uiLayout = uiLayout;
       _eventBus = eventBus;
       _visualElementLoader = visualElementLoader;
@@ -46,6 +49,7 @@ namespace ConstructionQueue.WidgetUI {
       _registry = registry;
       _rowFactory = rowFactory;
       _inputService = inputService;
+      _loc = loc;
     }
 
     public void Load() {
@@ -121,9 +125,8 @@ namespace ConstructionQueue.WidgetUI {
     }
     
     public void LateUpdateSingleton() {
-      // TODO localize
-      _constructionCountLabel.text =
-          string.Format("Construction sites: {0}", _rows.Count + _jobsToAdd.Count);
+      _constructionCountLabel.text = _loc.T("sp1um.ConstructionQueue.ConstructionSitesCounter",
+                                            _rows.Count + _jobsToAdd.Count);
       
       if (!_panelVisible) {
         return;
