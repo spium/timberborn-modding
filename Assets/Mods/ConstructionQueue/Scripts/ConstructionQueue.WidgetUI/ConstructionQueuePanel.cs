@@ -1,18 +1,18 @@
 using ConstructionQueue.ConstructionSites;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using Timberborn.AssetSystem;
 using Timberborn.BatchControl;
 using Timberborn.ConstructionSites;
 using Timberborn.CoreUI;
 using Timberborn.EntitySystem;
+using Timberborn.InputSystem;
 using Timberborn.SelectionSystem;
 using Timberborn.SingletonSystem;
 using Timberborn.UILayoutSystem;
 using UnityEngine.UIElements;
 
 namespace ConstructionQueue.WidgetUI {
-  public class ConstructionQueuePanel : ILoadableSingleton, ILateUpdatableSingleton {
+  public class ConstructionQueuePanel : ILoadableSingleton, ILateUpdatableSingleton, IInputProcessor {
 
     readonly UILayout _uiLayout;
     readonly EventBus _eventBus;
@@ -20,26 +20,32 @@ namespace ConstructionQueue.WidgetUI {
     readonly IAssetLoader _assetLoader;
     readonly ConstructionQueueRegistry _registry;
     readonly ConstructionQueueRowFactory _rowFactory;
+    readonly InputService _inputService;
+    
     readonly Dictionary<ConstructionJob, ConstructionQueueBatchControlRow> _rows = new();
     readonly HashSet<ConstructionJob> _jobsToAdd = new();
 
     VisualElement _root;
     ScrollView _scrollView;
     Label _constructionCountLabel;
-    bool _orderDirty, _panelVisible, _selectedDirty;
+    bool _orderDirty, _panelVisible = true, _selectedDirty;
     int _refreshFrames;
     EntityComponent _selected;
+    Button _toggler;
+    VisualElement _content, _background;
 
     public ConstructionQueuePanel(UILayout uiLayout, EventBus eventBus,
                                   VisualElementLoader visualElementLoader, IAssetLoader assetLoader,
                                   ConstructionQueueRegistry registry,
-                                  ConstructionQueueRowFactory rowFactory) {
+                                  ConstructionQueueRowFactory rowFactory,
+                                  InputService inputService) {
       _uiLayout = uiLayout;
       _eventBus = eventBus;
       _visualElementLoader = visualElementLoader;
       _assetLoader = assetLoader;
       _registry = registry;
       _rowFactory = rowFactory;
+      _inputService = inputService;
     }
 
     public void Load() {
@@ -49,9 +55,17 @@ namespace ConstructionQueue.WidgetUI {
       _root.styleSheets.Add(stylesheet);
       _scrollView = _root.Q<ScrollView>("ConstructionJobs");
       _constructionCountLabel = _root.Q<Label>("ConstructionCount");
-      ConfigureVisibilityToggling(_root, _root.Q<VisualElement>("ContentWrapper"));
+      _toggler = _root.Q<Button>("ExtensionToggler");
+      var button = _root.Q<Button>("ConstructionQueueButton");
+      _background = _root.Q<VisualElement>("Background");
+      _content = _root.Q<VisualElement>("ContentWrapper");
+      ConfigureVisibilityToggling(_toggler, button);
+      SetVisible(true);
+      _orderDirty = true;
+      
       _registry.JobQueueChanged += OnJobQueueChanged;
       _eventBus.Register(this);
+      _inputService.AddInputProcessor(this);
     }
 
     void OnJobQueueChanged(object sender, JobQueueChangedEventArgs e) {
@@ -152,29 +166,27 @@ namespace ConstructionQueue.WidgetUI {
       return cmp != 0 ? cmp : cmpA.InstantiationOrder - cmpB.InstantiationOrder;
     }
     
-    void ConfigureVisibilityToggling(VisualElement root, VisualElement content)
+    void ConfigureVisibilityToggling(params Button[] buttons)
     {
-      var toggler = root.Q<Button>("ExtensionToggler");
-      var background = root.Q<VisualElement>("Background");
-      _panelVisible = content.IsDisplayed();
-      toggler.RegisterCallback<ClickEvent>(_ => ToggleVisibility(toggler, content, background));
+      foreach (var button in buttons) {
+        button.RegisterCallback<ClickEvent>(_ => SetVisible(!_panelVisible));
+      }
     }
-    
-    void ToggleVisibility(
-        Button toggler,
-        VisualElement items,
-        VisualElement background)
-    {
-      var shouldHide = items.IsDisplayed();
-      _panelVisible = !shouldHide;
-      toggler.EnableInClassList("extension-clamp--hidden", shouldHide);
-      background.ToggleDisplayStyle(!shouldHide);
-      items.ToggleDisplayStyle(!shouldHide);
+
+    void SetVisible(bool visible) {
+      if (visible == _panelVisible) {
+        return;
+      }
+      
+      _panelVisible = visible;
+      _toggler.EnableInClassList("extension-clamp--hidden", !visible);
+      _background.ToggleDisplayStyle(visible);
+      _content.ToggleDisplayStyle(visible);
       if (_panelVisible) {
         _refreshFrames = 0;
       }
     }
-
+    
     void RefreshSelected() {
       if (!_selectedDirty) {
         return;
@@ -184,5 +196,15 @@ namespace ConstructionQueue.WidgetUI {
         row.Root.EnableInClassList(BatchControlRowHighlighter.HighlightedClass, ReferenceEquals(row.Entity, _selected));
       }
     }
+
+    public bool ProcessInput() {
+      if (_inputService.IsKeyDown("ConstructionQueueWidget")) {
+        SetVisible(!_panelVisible);
+        return true;
+      }
+      
+      return false;
+    }
+
   }
 }

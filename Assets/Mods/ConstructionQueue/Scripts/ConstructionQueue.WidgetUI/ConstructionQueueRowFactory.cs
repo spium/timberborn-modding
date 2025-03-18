@@ -32,6 +32,7 @@ namespace ConstructionQueue.WidgetUI {
       root.userData = comparisonData;
       //TODO the status for "can't get all required materials" does not seem to update in real-time, figure out why
       return new(root, job.GetComponentFast<EntityComponent>(),
+                 //TODO use a custom item instead of BuildingBatchControlRowItem to avoid showing the distance from district center
                  _buildingBatchControlRowItemFactory.Create(job),
                  _constructionSitePriorityBatchControlRowItemFactory.Create(job),
                  _statusBatchControlRowItemFactory.Create(job)) {
