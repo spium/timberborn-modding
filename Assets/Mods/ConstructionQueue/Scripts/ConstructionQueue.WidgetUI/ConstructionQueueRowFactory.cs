@@ -28,6 +28,9 @@ namespace ConstructionQueue.WidgetUI {
 
     public ConstructionQueueBatchControlRow Create(ConstructionJob job) {
       var root = _visualElementLoader.LoadVisualElement("Game/BatchControl/BatchControlRow");
+      // TODO this line below is probably not needed. See if you can make the UI look perfect (there's to much space on the right side).
+      // Remove distance from district center from rows.
+      root.style.flexGrow = 1;
       var comparisonData = new ConstructionQueueRowComparisonData(job);
       root.userData = comparisonData;
       //TODO the status for "can't get all required materials" does not seem to update in real-time, figure out why
